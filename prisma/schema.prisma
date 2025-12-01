@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+// NextAuth 用户模型
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String?   // 用于邮箱/密码登录
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  profile       Profile?
+
+  // 收到的申请（作为被申请者）
+  receivedApplications Application[] @relation("ReceivedApplications")
+  // 发出的申请（作为申请者）
+  sentApplications     Application[] @relation("SentApplications")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// 用户个人资料/名片
+model Profile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // 基本信息
+  nickname     String
+  title        String   // 个人标语
+  tags         String[] // 标签数组
+  aboutMe      String[] // 关于我（多行）
+  lookingFor   String[] // 寻找的人（多行）
+  questions    String[] // 筛选问题（3道左右）
+
+  // 联系方式（隐私保护）
+  contactEmail  String?
+  contactWechat String?
+
+  // 配置
+  themeColor   String   @default("zinc")
+  gender       String   @default("Female")
+  targetGender String   @default("Male")
+
+  // 公开分享码（用于生成短链接）
+  shareCode    String   @unique @default(cuid())
+  isPublic     Boolean  @default(true)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 收到的申请
+  applications Application[]
+}
+
+// 申请记录
+model Application {
+  id        String   @id @default(cuid())
+
+  // 申请目标（被申请的名片）
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  // 被申请者（名片所有者）
+  targetUserId String
+  targetUser   User   @relation("ReceivedApplications", fields: [targetUserId], references: [id], onDelete: Cascade)
+
+  // 申请者（可能已登录也可能是匿名）
+  applicantUserId String?
+  applicantUser   User?  @relation("SentApplications", fields: [applicantUserId], references: [id], onDelete: SetNull)
+
+  // 申请者信息
+  applicantName   String
+  applicantWechat String
+
+  // 问题和回答
+  questions String[]
+  answers   String[]
+
+  // 状态: pending(待处理), approved(已通过), rejected(已拒绝)
+  status    String   @default("pending")
+
+  // 处理备注
+  replyMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([profileId])
+  @@index([targetUserId])
+  @@index([applicantUserId])
+  @@index([status])
+}
