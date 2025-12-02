@@ -20,6 +20,7 @@ import {
   Lock,
   Unlock,
   ChevronDown,
+  AlertCircle,
 } from 'lucide-react'
 
 interface ProfileEditorProps {
@@ -36,6 +37,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
   const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit')
   const [tagInput, setTagInput] = useState('')
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false)
 
   const cardRef = useRef<HTMLDivElement>(null)
 
@@ -148,13 +150,11 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
     handleProfileChange('tags', arr)
   }
 
-  const downloadImage = async () => {
+  const downloadImage = async (force = false) => {
     // 检查是否有未保存的更改
-    if (hasUnsavedChanges) {
-      const confirmed = window.confirm('你有未保存的更改，建议先保存再下载。\n\n点击"确定"继续下载（使用当前内容），点击"取消"返回保存。')
-      if (!confirmed) {
-        return
-      }
+    if (hasUnsavedChanges && !force) {
+      setShowUnsavedWarning(true)
+      return
     }
 
     if (cardRef.current) {
@@ -216,6 +216,54 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
       {toastMessage && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-zinc-900 text-white px-6 py-2 rounded-full text-sm flex items-center gap-2 shadow-xl animate-fade-in-down">
           <Check size={16} /> {toastMessage}
+        </div>
+      )}
+
+      {/* 未保存警告对话框 */}
+      {showUnsavedWarning && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowUnsavedWarning(false)}
+          />
+          <div className="relative z-10 bg-white w-full max-w-sm mx-4 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle size={24} className="text-amber-600" />
+              </div>
+              <h3 className="text-lg font-bold text-center text-zinc-900 mb-2">有未保存的更改</h3>
+              <p className="text-sm text-center text-zinc-500 mb-6">
+                建议先保存再下载，否则下载的图片可能与预览不一致
+              </p>
+              <div className="space-y-2">
+                <button
+                  onClick={async () => {
+                    setShowUnsavedWarning(false)
+                    await handleSave()
+                    downloadImage(true)
+                  }}
+                  className="w-full py-3 bg-zinc-900 text-white font-bold rounded-xl hover:bg-black transition-colors"
+                >
+                  保存并下载
+                </button>
+                <button
+                  onClick={() => {
+                    setShowUnsavedWarning(false)
+                    downloadImage(true)
+                  }}
+                  className="w-full py-3 bg-zinc-100 text-zinc-600 font-bold rounded-xl hover:bg-zinc-200 transition-colors"
+                >
+                  直接下载
+                </button>
+                <button
+                  onClick={() => setShowUnsavedWarning(false)}
+                  className="w-full py-2 text-zinc-400 text-sm hover:text-zinc-600 transition-colors"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
