@@ -129,7 +129,10 @@ function LoginForm() {
 
         <p className="text-center text-sm text-zinc-600 mt-6">
           还没有账号？{' '}
-          <Link href="/register" className="font-bold text-zinc-900 hover:underline">
+          <Link
+            href={searchParams.get('callbackUrl') ? `/register?callbackUrl=${encodeURIComponent(searchParams.get('callbackUrl')!)}` : '/register'}
+            className="font-bold text-zinc-900 hover:underline"
+          >
             免费注册
           </Link>
         </p>

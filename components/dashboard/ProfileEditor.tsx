@@ -628,33 +628,43 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
           mobileTab === 'edit' ? 'hidden md:flex' : 'flex h-full'
         }`}
       >
-        <div className="absolute top-4 right-4 flex gap-3 z-30">
-          <button
-            onClick={() => {
-              copyToClipboard(shareUrl)
-              setToastMessage('链接已复制!')
-              setTimeout(() => setToastMessage(null), 2000)
-            }}
-            className="bg-white p-3 rounded-full shadow-lg shadow-black/5 hover:text-blue-600 transition-all hover:scale-110 active:scale-95 text-zinc-600"
-            title="复制分享链接"
-          >
-            <LinkIcon size={20} />
-          </button>
-          <button
-            onClick={downloadImage}
-            className={`p-3 rounded-full shadow-lg shadow-black/10 text-white transition-all hover:scale-110 active:scale-95 ${
-              !isEditing ? 'bg-zinc-900 hover:bg-black' : 'bg-zinc-400 hover:bg-zinc-500'
-            }`}
-            title="下载图片"
-          >
-            <Download size={20} />
-          </button>
-        </div>
-
-        {!isEditing && (
-          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 bg-white/90 backdrop-blur text-emerald-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100 shadow-sm flex items-center gap-1 animate-in fade-in zoom-in duration-300">
-            <Check size={12} strokeWidth={3} /> 可以分享了
+        {/* 检查是否有联系方式 */}
+        {!profile.contactWechat ? (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-amber-50 text-amber-700 px-4 py-2 rounded-xl text-xs font-bold border border-amber-200 shadow-sm flex items-center gap-2 max-w-xs text-center">
+            <Lock size={14} className="shrink-0" />
+            <span>请先填写微信号才能分享名片</span>
           </div>
+        ) : (
+          <>
+            <div className="absolute top-4 right-4 flex gap-3 z-30">
+              <button
+                onClick={() => {
+                  copyToClipboard(shareUrl)
+                  setToastMessage('链接已复制!')
+                  setTimeout(() => setToastMessage(null), 2000)
+                }}
+                className="bg-white p-3 rounded-full shadow-lg shadow-black/5 hover:text-blue-600 transition-all hover:scale-110 active:scale-95 text-zinc-600"
+                title="复制分享链接"
+              >
+                <LinkIcon size={20} />
+              </button>
+              <button
+                onClick={downloadImage}
+                className={`p-3 rounded-full shadow-lg shadow-black/10 text-white transition-all hover:scale-110 active:scale-95 ${
+                  !isEditing ? 'bg-zinc-900 hover:bg-black' : 'bg-zinc-400 hover:bg-zinc-500'
+                }`}
+                title="下载图片"
+              >
+                <Download size={20} />
+              </button>
+            </div>
+
+            {!isEditing && (
+              <div className="absolute top-6 left-1/2 -translate-x-1/2 z-30 bg-white/90 backdrop-blur text-emerald-600 px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-100 shadow-sm flex items-center gap-1 animate-in fade-in zoom-in duration-300">
+                <Check size={12} strokeWidth={3} /> 可以分享了
+              </div>
+            )}
+          </>
         )}
 
         {/* Scaled Preview Wrapper */}
