@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from '@/components/ui/LinkNoPrefetch'
 import { submitApplication } from '@/app/actions/application'
 import { COLORS, type ThemeColor } from '@/lib/types'
@@ -42,16 +43,35 @@ interface ApplyFormProps {
 }
 
 export function ApplyForm({ profile, currentUser, isOwnProfile = false }: ApplyFormProps) {
+  const router = useRouter()
   const [answers, setAnswers] = useState<string[]>(
     new Array(profile.questions.length).fill('')
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [redirectCountdown, setRedirectCountdown] = useState(3)
   const [error, setError] = useState('')
 
   // 联系方式状态 - 如果用户没有，允许手动填写
   const [inputWechat, setInputWechat] = useState('')
   const [inputEmail, setInputEmail] = useState('')
+
+  // 提交成功后自动跳转
+  useEffect(() => {
+    if (isSubmitted) {
+      const timer = setInterval(() => {
+        setRedirectCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            router.push('/dashboard')
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+  }, [isSubmitted, router])
 
   const themeClass = COLORS[profile.themeColor as ThemeColor] || COLORS.zinc
 
@@ -145,25 +165,27 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false }: ApplyF
             <p className="text-sm text-blue-900 leading-relaxed font-medium">
               如果对方通过你的申请，你会收到 TA 的微信号。
               <br />
-              可以在「我想认识谁」中查看申请状态。
+              可以在「我的申请」中查看申请状态。
             </p>
           </div>
 
-          <div className="space-y-3">
-            <Link
-              href="/dashboard/sent"
-              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-zinc-900 text-white rounded-xl hover:bg-black transition-colors font-bold shadow-lg text-sm"
-            >
-              <ArrowRight size={16} /> 查看我的申请
-            </Link>
-
-            <Link
-              href="/dashboard"
-              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-white text-zinc-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-bold text-sm"
-            >
-              返回我的名片
-            </Link>
+          <div className="text-sm text-zinc-500 mb-4">
+            {redirectCountdown > 0 ? (
+              <span>{redirectCountdown} 秒后自动跳转到个人主页...</span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 size={14} className="animate-spin" />
+                正在跳转...
+              </span>
+            )}
           </div>
+
+          <Link
+            href="/dashboard"
+            className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-zinc-900 text-white rounded-xl hover:bg-black transition-colors font-bold shadow-lg text-sm"
+          >
+            <ArrowRight size={16} /> 立即返回
+          </Link>
         </div>
       </div>
     )
