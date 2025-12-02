@@ -125,7 +125,7 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
             <div className="mt-8 p-4 bg-blue-50 rounded-xl border border-blue-100 text-blue-700 text-xs text-left max-w-sm mx-auto">
               <strong>提示:</strong>
               <br />
-              1. 在"我的名片"页面下载或复制链接分享
+              1. 在 &quot;我的名片&quot; 页面下载或复制链接分享
               <br />
               2. 对方扫码填写申请
               <br />
@@ -260,7 +260,7 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
 
                   {!myWechat && app.status === 'pending' && (
                     <p className="text-xs text-amber-600 mt-2 text-center">
-                      请先在"我的名片"中设置微信号才能通过申请
+                      请先在 &quot;我的名片&quot; 中设置微信号才能通过申请
                     </p>
                   )}
                 </div>

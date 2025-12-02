@@ -175,7 +175,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
 
       {/* Editor Panel */}
       <div
-        className={`w-full md:w-1/2 lg:w-5/12 bg-white flex flex-col ${
+        className={`w-full md:w-1/2 lg:w-5/12 bg-white flex flex-col min-h-0 ${
           mobileTab === 'preview' ? 'hidden md:flex' : 'flex h-full'
         }`}
       >
@@ -209,11 +209,26 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
             </button>
           )}
         </div>
+        {!isEditing && (
+          <div className="px-6 md:px-8 py-2 bg-amber-50 text-amber-700 text-xs font-bold border-t border-b border-amber-100 flex items-center gap-2">
+            <Lock size={12} /> 当前内容已锁定，点击右上角“解锁编辑”开始编辑
+          </div>
+        )}
 
         {/* Scrollable Form Content */}
         <div
+          onMouseDown={(e) => {
+            if (!isEditing) {
+              const t = e.target as HTMLElement
+              const tag = t.tagName
+              if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || tag === 'BUTTON') {
+                setToastMessage('当前内容已锁定，点击右上角“解锁编辑”')
+                setTimeout(() => setToastMessage(null), 2000)
+              }
+            }
+          }}
           className={`flex-1 overflow-y-auto p-6 md:p-8 hide-scrollbar pb-32 space-y-10 ${
-            !isEditing ? 'opacity-60 pointer-events-none grayscale-[0.8] select-none' : ''
+            !isEditing ? 'opacity-60 grayscale-[0.8] select-none' : ''
           } transition-all duration-300`}
         >
           <section className="space-y-5">
@@ -227,7 +242,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                 disabled={!isEditing}
                 value={profile.nickname}
                 onChange={(e) => handleProfileChange('nickname', e.target.value)}
-                className="w-full bg-zinc-50 border-none rounded-2xl text-base font-bold p-4 text-zinc-900 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all placeholder:text-zinc-300"
+                className="w-full bg-zinc-50 border-none rounded-2xl text-base font-bold p-4 text-zinc-900 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all placeholder:text-zinc-300 disabled:cursor-not-allowed"
                 placeholder="你的昵称"
               />
             </div>
@@ -241,7 +256,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                   disabled={!isEditing}
                   value={profile.title}
                   onChange={(e) => handleProfileChange('title', e.target.value)}
-                  className="w-full bg-zinc-50 border-none rounded-2xl text-sm font-medium p-4 text-zinc-900 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all"
+                  className="w-full bg-zinc-50 border-none rounded-2xl text-sm font-medium p-4 text-zinc-900 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all disabled:cursor-not-allowed"
                 />
               </div>
               <div>
@@ -257,7 +272,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                       e.target.value.split(',').map((s) => s.trim())
                     )
                   }
-                  className="w-full bg-zinc-50 border-none rounded-2xl text-sm font-medium p-4 text-zinc-900 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all"
+                  className="w-full bg-zinc-50 border-none rounded-2xl text-sm font-medium p-4 text-zinc-900 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -275,7 +290,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                       profile.themeColor === c
                         ? 'ring-4 ring-offset-2 ring-zinc-200 scale-90'
                         : 'opacity-70 hover:opacity-100 hover:scale-105'
-                    } transition-all shadow-sm`}
+                    } transition-all shadow-sm disabled:cursor-not-allowed`}
                   />
                 ))}
               </div>
@@ -294,7 +309,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                     disabled={!isEditing}
                     value={profile.gender}
                     onChange={(e) => handleProfileChange('gender', e.target.value)}
-                    className="w-full appearance-none bg-white border-none rounded-xl text-sm font-bold p-3 pr-8 text-zinc-900 focus:ring-2 focus:ring-zinc-200 cursor-pointer shadow-sm"
+                    className="w-full appearance-none bg-white border-none rounded-xl text-sm font-bold p-3 pr-8 text-zinc-900 focus:ring-2 focus:ring-zinc-200 cursor-pointer shadow-sm disabled:cursor-not-allowed"
                   >
                     {GENDER_OPTIONS.map((g) => (
                       <option key={g} value={g}>
@@ -315,7 +330,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                     disabled={!isEditing}
                     value={profile.targetGender}
                     onChange={(e) => handleProfileChange('targetGender', e.target.value)}
-                    className="w-full appearance-none bg-white border-none rounded-xl text-sm font-bold p-3 pr-8 text-zinc-900 focus:ring-2 focus:ring-zinc-200 cursor-pointer shadow-sm"
+                    className="w-full appearance-none bg-white border-none rounded-xl text-sm font-bold p-3 pr-8 text-zinc-900 focus:ring-2 focus:ring-zinc-200 cursor-pointer shadow-sm disabled:cursor-not-allowed"
                   >
                     {GENDER_OPTIONS.map((g) => (
                       <option key={g} value={g}>
@@ -360,7 +375,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                     disabled={!isEditing}
                     value={item}
                     onChange={(e) => handleArrayChange('aboutMe', idx, e.target.value)}
-                    className="flex-1 bg-zinc-50 border-none rounded-2xl text-sm p-4 font-medium focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all resize-none leading-relaxed"
+                    className="flex-1 bg-zinc-50 border-none rounded-2xl text-sm p-4 font-medium focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all resize-none leading-relaxed disabled:cursor-not-allowed"
                   />
                   {isEditing && (
                     <button
@@ -411,7 +426,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                     disabled={!isEditing}
                     value={item}
                     onChange={(e) => handleArrayChange('lookingFor', idx, e.target.value)}
-                    className="flex-1 bg-zinc-50 border-none rounded-2xl text-sm p-4 font-medium focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all resize-none leading-relaxed"
+                    className="flex-1 bg-zinc-50 border-none rounded-2xl text-sm p-4 font-medium focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all resize-none leading-relaxed disabled:cursor-not-allowed"
                   />
                   {isEditing && (
                     <button
@@ -457,7 +472,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                 disabled={!isEditing}
                 value={profile.contactWechat}
                 onChange={(e) => handleProfileChange('contactWechat', e.target.value)}
-                className="w-full bg-zinc-50 border-none rounded-2xl text-sm p-4 font-mono text-zinc-600 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all"
+                className="w-full bg-zinc-50 border-none rounded-2xl text-sm p-4 font-mono text-zinc-600 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all disabled:cursor-not-allowed"
                 placeholder="wx_id_123456"
               />
             </div>
@@ -492,7 +507,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                       disabled={!isEditing}
                       value={item}
                       onChange={(e) => handleArrayChange('questions', idx, e.target.value)}
-                      className="flex-1 bg-blue-50/50 border-none rounded-2xl text-sm p-4 font-medium text-zinc-700 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all"
+                      className="flex-1 bg-blue-50/50 border-none rounded-2xl text-sm p-4 font-medium text-zinc-700 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all disabled:cursor-not-allowed"
                     />
                     {isEditing && (
                       <button

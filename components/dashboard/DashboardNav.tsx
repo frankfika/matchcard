@@ -30,12 +30,12 @@ export function DashboardNav({ user }: DashboardNavProps) {
     <header className="shrink-0 relative z-30 pt-4 px-4 pb-2 w-full max-w-7xl mx-auto flex flex-col items-center">
       {/* Logo and User */}
       <div className="w-full flex justify-between items-center mb-4">
-        <Link href="/" className="flex items-center gap-2">
+        <div className="flex items-center gap-2 select-none">
           <div className="w-8 h-8 bg-black text-white rounded-lg flex items-center justify-center shadow-lg shadow-black/20">
             <Sparkles size={16} className="text-yellow-300" />
           </div>
           <span className="font-black text-xl tracking-tight text-zinc-900">SoulSync</span>
-        </Link>
+        </div>
 
         {/* User Menu */}
         <div className="relative">
@@ -94,6 +94,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className={`flex-1 relative z-10 flex items-center justify-center gap-2 py-2.5 text-xs font-bold transition-colors rounded-xl ${
                 isActive ? 'text-white' : 'text-zinc-500 hover:bg-black/5'
               }`}

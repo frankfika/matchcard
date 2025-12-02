@@ -20,7 +20,7 @@ export default async function DashboardLayout({
 
       {/* Main Content */}
       <main className="flex-1 relative w-full max-w-7xl mx-auto md:px-6 md:pb-6 min-h-0 overflow-hidden">
-        <div className="h-full bg-white md:rounded-3xl shadow-sm md:border border-zinc-200/50 relative flex flex-col">
+        <div className="h-full bg-white md:rounded-3xl shadow-sm md:border border-zinc-200/50 relative flex flex-col min-h-0">
           {children}
         </div>
       </main>

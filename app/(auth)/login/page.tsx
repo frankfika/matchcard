@@ -47,12 +47,12 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2">
+          <div className="inline-flex items-center gap-2 select-none">
             <div className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center shadow-lg">
               <Sparkles size={24} className="text-yellow-300" />
             </div>
             <span className="font-black text-3xl tracking-tight">SoulSync</span>
-          </Link>
+          </div>
         </div>
 
         {/* Login Form */}

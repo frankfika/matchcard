@@ -16,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className="antialiased">
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider refetchOnWindowFocus={false} refetchInterval={0} refetchWhenOffline={false}>
+          {children}
+        </SessionProvider>
       </body>
     </html>
   )
