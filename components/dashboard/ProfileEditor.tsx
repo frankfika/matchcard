@@ -64,13 +64,29 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
   }
 
   const handleSave = async () => {
+    // 保存前过滤掉空值
+    const cleanedProfile = {
+      ...profile,
+      aboutMe: profile.aboutMe.filter(item => item.trim()),
+      lookingFor: profile.lookingFor.filter(item => item.trim()),
+      questions: profile.questions.filter(item => item.trim()),
+      tags: profile.tags.filter(item => item.trim()),
+    }
+
     setIsSaving(true)
-    const result = await updateProfile(profile)
+    const result = await updateProfile(cleanedProfile)
     setIsSaving(false)
 
     if (result.error) {
       setToastMessage(result.error)
     } else {
+      // 更新本地状态，保留至少一个空输入框用于显示
+      setProfile({
+        ...cleanedProfile,
+        aboutMe: cleanedProfile.aboutMe.length > 0 ? cleanedProfile.aboutMe : [''],
+        lookingFor: cleanedProfile.lookingFor.length > 0 ? cleanedProfile.lookingFor : [''],
+        questions: cleanedProfile.questions.length > 0 ? cleanedProfile.questions : [''],
+      })
       setIsEditing(false)
       setHasUnsavedChanges(false)
       setToastMessage('已保存')

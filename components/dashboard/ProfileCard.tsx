@@ -61,7 +61,7 @@ export function ProfileCard({ data, shareUrl, forwardRef }: ProfileCardProps) {
 
           <div className="flex flex-wrap items-center gap-3">
             <GenderIndicator gender={data.gender} target={data.targetGender} />
-            {data.tags.map((tag, i) => (
+            {data.tags.filter(tag => tag.trim()).map((tag, i) => (
               <span
                 key={i}
                 className="text-[10px] font-bold px-2 py-1 bg-white/95 text-black rounded shadow-sm flex items-center gap-1 backdrop-blur-sm whitespace-nowrap"
@@ -83,7 +83,7 @@ export function ProfileCard({ data, shareUrl, forwardRef }: ProfileCardProps) {
               About Me
             </h3>
             <div className="space-y-2 relative z-10">
-              {data.aboutMe.map((line, i) => (
+              {data.aboutMe.filter(line => line.trim()).map((line, i) => (
                 <p key={i} className="text-sm font-medium leading-relaxed opacity-95 drop-shadow-md">
                   {line}
                 </p>
@@ -100,7 +100,7 @@ export function ProfileCard({ data, shareUrl, forwardRef }: ProfileCardProps) {
               Seeking
             </h3>
             <div className="space-y-2">
-              {data.lookingFor.map((line, i) => (
+              {data.lookingFor.filter(line => line.trim()).map((line, i) => (
                 <div key={i} className="flex items-start gap-3">
                   <ArrowUpRight size={14} className="mt-1 opacity-70 shrink-0" />
                   <p className="text-sm font-medium leading-relaxed opacity-95">{line}</p>
@@ -135,7 +135,7 @@ export function ProfileCard({ data, shareUrl, forwardRef }: ProfileCardProps) {
                 APPLY
               </div>
               <p className="text-[10px] text-zinc-500 font-medium leading-relaxed max-w-[140px]">
-                Answer {data.questions.length} questions to unlock contact details.
+                Answer {data.questions.filter(q => q.trim()).length} questions to unlock contact details.
               </p>
             </div>
 

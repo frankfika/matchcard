@@ -46,8 +46,10 @@ interface ApplyFormProps {
 
 export function ApplyForm({ profile, currentUser, isOwnProfile = false, hasApplied = false, applicationStatus }: ApplyFormProps) {
   const router = useRouter()
+  // 过滤空问题
+  const validQuestions = profile.questions.filter(q => q.trim())
   const [answers, setAnswers] = useState<string[]>(
-    new Array(profile.questions.length).fill('')
+    new Array(validQuestions.length).fill('')
   )
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
@@ -102,7 +104,7 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false, hasAppli
       applicantName: currentUser.nickname,
       applicantWechat: wechatToSubmit,
       answers,
-      questions: profile.questions,
+      questions: validQuestions,
       // 如果是新填写的微信号，标记需要同步到名片
       syncToProfile: !hasExistingWechat && hasNewWechat,
     })
@@ -274,7 +276,7 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false, hasAppli
               关于 TA
             </h3>
             <ul className="space-y-3">
-              {profile.aboutMe.map((line, i) => (
+              {profile.aboutMe.filter(line => line.trim()).map((line, i) => (
                 <li
                   key={i}
                   className="text-gray-700 font-medium leading-relaxed flex items-start gap-2"
@@ -292,7 +294,7 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false, hasAppli
               TA 在寻找
             </h3>
             <ul className="space-y-3">
-              {profile.lookingFor.map((line, i) => (
+              {profile.lookingFor.filter(line => line.trim()).map((line, i) => (
                 <li
                   key={i}
                   className="text-gray-700 font-medium leading-relaxed flex items-start gap-2"
@@ -314,7 +316,7 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false, hasAppli
             </h3>
 
             <div className="space-y-8">
-              {profile.questions.map((q, idx) => (
+              {validQuestions.map((q, idx) => (
                 <div key={idx} className="group">
                   <label className="block text-sm font-bold text-gray-800 mb-3 ml-1 border-l-4 border-zinc-200 pl-3">
                     {q}

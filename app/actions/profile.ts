@@ -20,15 +20,18 @@ export async function getProfile() {
     return { error: '未找到名片' }
   }
 
+  // 确保数组至少有一个空字符串用于显示输入框
+  const ensureArray = (arr: string[]) => arr.length > 0 ? arr : ['']
+
   return {
     profile: {
       id: profile.id,
       nickname: profile.nickname,
       title: profile.title,
       tags: profile.tags,
-      aboutMe: profile.aboutMe,
-      lookingFor: profile.lookingFor,
-      questions: profile.questions,
+      aboutMe: ensureArray(profile.aboutMe),
+      lookingFor: ensureArray(profile.lookingFor),
+      questions: ensureArray(profile.questions),
       contactEmail: profile.contactEmail || '',
       contactWechat: profile.contactWechat || '',
       themeColor: profile.themeColor as ProfileData['themeColor'],
@@ -50,17 +53,23 @@ export async function updateProfile(data: Partial<ProfileData>) {
     // 验证数据
     const validated = profileSchema.partial().parse(data)
 
+    // 过滤空值
+    const cleanTags = validated.tags?.filter(t => t.trim()) || []
+    const cleanAboutMe = validated.aboutMe?.filter(t => t.trim()) || []
+    const cleanLookingFor = validated.lookingFor?.filter(t => t.trim()) || []
+    const cleanQuestions = validated.questions?.filter(t => t.trim()) || []
+
     const profile = await prisma.profile.update({
       where: { userId: session.user.id },
       data: {
-        ...(validated.nickname && { nickname: validated.nickname }),
-        ...(validated.title && { title: validated.title }),
-        ...(validated.tags && { tags: validated.tags }),
-        ...(validated.aboutMe && { aboutMe: validated.aboutMe }),
-        ...(validated.lookingFor && { lookingFor: validated.lookingFor }),
-        ...(validated.questions && { questions: validated.questions }),
-        ...(validated.contactEmail !== undefined && { contactEmail: validated.contactEmail }),
-        ...(validated.contactWechat !== undefined && { contactWechat: validated.contactWechat }),
+        ...(validated.nickname !== undefined && { nickname: validated.nickname.trim() }),
+        ...(validated.title !== undefined && { title: validated.title.trim() }),
+        ...(validated.tags && { tags: cleanTags }),
+        ...(validated.aboutMe && { aboutMe: cleanAboutMe }),
+        ...(validated.lookingFor && { lookingFor: cleanLookingFor }),
+        ...(validated.questions && { questions: cleanQuestions }),
+        ...(validated.contactEmail !== undefined && { contactEmail: validated.contactEmail.trim() }),
+        ...(validated.contactWechat !== undefined && { contactWechat: validated.contactWechat.trim() }),
         ...(validated.themeColor && { themeColor: validated.themeColor }),
         ...(validated.gender && { gender: validated.gender }),
         ...(validated.targetGender && { targetGender: validated.targetGender }),
