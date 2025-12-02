@@ -17,6 +17,7 @@ import {
   Loader2,
   HelpCircle,
   Send,
+  MessageCircle,
 } from 'lucide-react'
 
 interface InboxListProps {
