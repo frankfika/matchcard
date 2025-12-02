@@ -78,6 +78,12 @@ export interface ApplicationData {
     themeColor: string
     contactWechat?: string
   }
+  // 申请者的名片信息（用于筛选时查看）
+  applicantProfile?: {
+    nickname: string
+    title: string
+    tags: string[]
+  }
 }
 
 // 用于 URL 编码的申请 payload

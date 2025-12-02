@@ -30,6 +30,11 @@ export async function submitApplication(data: {
 
     // 登录用户优先使用自己的名片联系方式；未登录允许填写任意联系方式
     const session = await auth()
+
+    // 防止自己申请自己
+    if (session?.user?.id && session.user.id === profile.userId) {
+      return { error: '不能申请自己的名片哦' }
+    }
     let applicantUserId: string | null = null
     let applicantName = validated.applicantName || ''
     let applicantWechat = validated.applicantWechat || ''
@@ -109,6 +114,17 @@ export async function getReceivedApplications() {
           themeColor: true,
         },
       },
+      applicantUser: {
+        select: {
+          profile: {
+            select: {
+              nickname: true,
+              title: true,
+              tags: true,
+            },
+          },
+        },
+      },
     },
     orderBy: { createdAt: 'desc' },
   })
@@ -126,6 +142,7 @@ export async function getReceivedApplications() {
       createdAt: app.createdAt.toISOString(),
       updatedAt: app.updatedAt.toISOString(),
       profile: app.profile,
+      applicantProfile: app.applicantUser?.profile ?? undefined
     })),
   }
 }

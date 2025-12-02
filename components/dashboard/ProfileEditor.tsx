@@ -123,6 +123,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
         const element = cardRef.current
         const dataUrl = await toPng(element, {
           cacheBust: true,
+          useCORS: true,
           pixelRatio: 3,
           backgroundColor: 'transparent',
           width: element.scrollWidth,
@@ -130,6 +131,18 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
           style: {
             transform: 'none',
             margin: '0',
+            filter: 'none',
+            backdropFilter: 'none',
+          },
+          filter: (node) => {
+            try {
+              const el = node as HTMLElement
+              const style = window.getComputedStyle(el)
+              const f = style.getPropertyValue('filter') || ''
+              return !/url\(#/i.test(f)
+            } catch {
+              return true
+            }
           },
         })
 

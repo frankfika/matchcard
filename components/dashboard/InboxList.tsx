@@ -158,11 +158,28 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
                   >
                     {app.applicantName?.[0]?.toUpperCase() || 'U'}
                   </div>
-                  <div>
+                  <div className="space-y-0.5">
                     <h3 className="font-bold text-zinc-900">{app.applicantName || '未命名'}</h3>
                     <p className="text-xs text-gray-400">
                       {new Date(app.createdAt).toLocaleDateString('zh-CN')}
                     </p>
+                    {app.applicantProfile && (
+                      <div className="mt-0.5">
+                        <p className="text-[11px] text-zinc-600 line-clamp-1">
+                          {app.applicantProfile.title}
+                        </p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {(app.applicantProfile.tags || []).slice(0, 3).map((t, i) => (
+                            <span
+                              key={i}
+                              className="text-[10px] font-bold px-2 py-0.5 bg-zinc-100 text-zinc-700 rounded border"
+                            >
+                              #{t}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -181,6 +198,33 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="space-y-4 mt-4">
+                    {app.applicantProfile && (
+                      <div className="p-3 bg-white rounded-lg border border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">
+                          申请者名片摘要
+                        </p>
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-bold text-zinc-900">
+                              {app.applicantProfile.nickname}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">
+                              {app.applicantProfile.title}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {(app.applicantProfile.tags || []).slice(0, 6).map((t, i) => (
+                              <span
+                                key={i}
+                                className="text-[10px] font-bold px-2 py-0.5 bg-zinc-100 text-zinc-700 rounded border"
+                              >
+                                #{t}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     {app.questions.map((q, i) => (
                       <div key={i}>
                         <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">{q}</p>

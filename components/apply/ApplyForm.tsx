@@ -1,17 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { useSession } from 'next-auth/react'
 import Link from '@/components/ui/LinkNoPrefetch'
 import { submitApplication } from '@/app/actions/application'
-import { COLORS, type ThemeColor, type Gender } from '@/lib/types'
+import { COLORS, type ThemeColor } from '@/lib/types'
 import {
   CheckCircle,
   ArrowRight,
   MessageCircle,
   Loader2,
-  Sparkles,
   Hash,
+  UserCircle,
+  AlertTriangle,
 } from 'lucide-react'
 
 interface ProfileForApply {
@@ -29,18 +29,22 @@ interface ProfileForApply {
   shareCode: string
 }
 
-interface ApplyFormProps {
-  profile: ProfileForApply
+interface CurrentUserProfile {
+  nickname: string
+  wechat: string
+  email: string
 }
 
-export function ApplyForm({ profile }: ApplyFormProps) {
-  const { data: session } = useSession()
-  const isLogged = !!session?.user
+interface ApplyFormProps {
+  profile: ProfileForApply
+  currentUser: CurrentUserProfile | null
+  isOwnProfile?: boolean
+}
+
+export function ApplyForm({ profile, currentUser, isOwnProfile = false }: ApplyFormProps) {
   const [answers, setAnswers] = useState<string[]>(
     new Array(profile.questions.length).fill('')
   )
-  const [applicantWechat, setApplicantWechat] = useState('')
-  const [applicantName, setApplicantName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [error, setError] = useState('')
@@ -53,18 +57,21 @@ export function ApplyForm({ profile }: ApplyFormProps) {
     setAnswers(newAnswers)
   }
 
-  const isFormValid = answers.every((a) => a.trim().length > 0) && (isLogged ? true : applicantWechat.trim().length > 0)
+  // 检查是否有联系方式
+  const hasContact = currentUser ? !!(currentUser.wechat || currentUser.email) : false
+  const isFormValid = answers.every((a) => a.trim().length > 0) && hasContact
 
   const handleSubmit = async () => {
-    if (!isFormValid) return
+    if (!isFormValid || !currentUser) return
 
     setIsSubmitting(true)
     setError('')
 
     const result = await submitApplication({
       profileId: profile.id,
-      applicantName,
-      applicantWechat,
+      applicantName: currentUser.nickname,
+      applicantWechat: currentUser.wechat,
+      applicantEmail: currentUser.email,
       answers,
       questions: profile.questions,
     })
@@ -76,6 +83,34 @@ export function ApplyForm({ profile }: ApplyFormProps) {
     } else {
       setIsSubmitted(true)
     }
+  }
+
+  // 自己的名片提示
+  if (isOwnProfile) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-6">
+            <UserCircle size={32} />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">这是你的名片</h2>
+          <p className="text-gray-600 mb-6 text-sm">
+            不能申请自己的名片哦～
+            <br />
+            把链接分享给别人，让他们来申请吧！
+          </p>
+
+          <div className="space-y-3">
+            <Link
+              href="/dashboard"
+              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-zinc-900 text-white rounded-xl hover:bg-black transition-colors font-bold shadow-lg text-sm"
+            >
+              <ArrowRight size={16} /> 返回我的名片
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // 提交成功页面
@@ -98,23 +133,23 @@ export function ApplyForm({ profile }: ApplyFormProps) {
             <p className="text-sm text-blue-900 leading-relaxed font-medium">
               如果对方通过你的申请，你会收到 TA 的微信号。
               <br />
-              你也可以注册账号追踪申请状态。
+              可以在「我想认识谁」中查看申请状态。
             </p>
           </div>
 
           <div className="space-y-3">
             <Link
-              href="/register"
+              href="/dashboard/sent"
               className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-zinc-900 text-white rounded-xl hover:bg-black transition-colors font-bold shadow-lg text-sm"
             >
-              <Sparkles size={16} /> 我也要创建名片
+              <ArrowRight size={16} /> 查看我的申请
             </Link>
 
             <Link
-              href="/"
+              href="/dashboard"
               className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-white text-zinc-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors font-bold text-sm"
             >
-              <ArrowRight size={16} /> 返回首页
+              返回我的名片
             </Link>
           </div>
         </div>
@@ -130,14 +165,9 @@ export function ApplyForm({ profile }: ApplyFormProps) {
           <div className={`${themeClass} p-8 text-white relative overflow-hidden`}>
             <div className="absolute inset-0 bg-noise opacity-20" />
             <div className="relative z-10">
-              <div className="flex justify-between items-start mb-2">
-                <p className="text-white/80 text-sm font-medium uppercase tracking-widest">
-                  申请匹配
-                </p>
-                <Link href="/register" className="text-white/60 text-xs hover:text-white underline">
-                  我也要创建名片
-                </Link>
-              </div>
+              <p className="text-white/80 text-sm font-medium uppercase tracking-widest mb-2">
+                申请匹配
+              </p>
               <h1 className="text-4xl font-black tracking-tighter mb-2">
                 {profile.nickname || profile.title}
               </h1>
@@ -223,38 +253,51 @@ export function ApplyForm({ profile }: ApplyFormProps) {
               </span>
               你的信息
             </h3>
-            {isLogged ? (
-              <div className="bg-blue-50 border border-blue-100 text-blue-700 rounded-xl p-6 text-sm">
-                已登录，将使用你在“我的名片”中的昵称与微信号提交申请。
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-                <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                    怎么称呼你
-                  </label>
-                  <input
-                    value={applicantName}
-                    onChange={(e) => setApplicantName(e.target.value)}
-                    className="block w-full rounded-lg border-gray-200 bg-gray-50 focus:bg-white shadow-sm sm:text-sm p-3 border transition-all"
-                    placeholder="昵称"
-                  />
+
+            {/* 显示当前账号信息 */}
+            {currentUser ? (
+              <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-gray-500 uppercase">昵称</span>
+                  <span className="text-sm font-medium text-gray-900">{currentUser.nickname}</span>
                 </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                  你的联系方式（微信/邮箱/电话） <span className="text-red-500">*</span>
-                </label>
-                <input
-                  value={applicantWechat}
-                  onChange={(e) => setApplicantWechat(e.target.value)}
-                  className="block w-full rounded-lg border-gray-200 bg-gray-50 focus:bg-white shadow-sm sm:text-sm p-3 border transition-all"
-                  placeholder="填写微信号/邮箱/或电话其中之一"
-                />
-                <p className="text-[10px] text-gray-400 mt-2 flex items-center gap-1">
-                  <CheckCircle size={10} /> 隐私保护：未通过审批前，对方看不到此信息
+                {currentUser.wechat && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-500 uppercase">微信</span>
+                    <span className="text-sm font-medium text-gray-900">{currentUser.wechat}</span>
+                  </div>
+                )}
+                {currentUser.email && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-500 uppercase">邮箱</span>
+                    <span className="text-sm font-medium text-gray-900">{currentUser.email}</span>
+                  </div>
+                )}
+                {!currentUser.wechat && !currentUser.email && (
+                  <div className="bg-amber-50 text-amber-700 text-sm p-3 rounded-lg flex items-center gap-2">
+                    <AlertTriangle size={16} />
+                    你的名片还没有填写联系方式，请先去补充微信或邮箱
+                  </div>
+                )}
+                <p className="text-[10px] text-gray-400 flex items-center gap-1 pt-2 border-t border-gray-100">
+                  <CheckCircle size={10} /> 以上信息来自你的名片，仅在对方通过后可见
                 </p>
               </div>
+            ) : (
+              <div className="bg-amber-50 text-amber-700 text-sm p-4 rounded-xl flex items-center gap-2">
+                <AlertTriangle size={16} />
+                请先完善你的名片信息
               </div>
+            )}
+
+            {!hasContact && currentUser && (
+              <Link
+                href="/dashboard"
+                className="mt-4 inline-flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900 font-medium"
+              >
+                <ArrowRight size={14} />
+                去完善我的名片
+              </Link>
             )}
 
             {error && (

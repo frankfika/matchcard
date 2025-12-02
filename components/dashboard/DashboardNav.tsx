@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import Link from '@/components/ui/LinkNoPrefetch'
-import { usePathname } from 'next/navigation'
-import { signOut } from 'next-auth/react'
-import { Sparkles, User, Heart, Send, LogOut, ChevronDown } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { signOut, signIn } from 'next-auth/react'
+import { Sparkles, User, Heart, Send, LogOut, ChevronDown, AlertCircle } from 'lucide-react'
 
 interface DashboardNavProps {
   user: {
@@ -22,11 +22,18 @@ const navItems = [
 
 export function DashboardNav({ user }: DashboardNavProps) {
   const pathname = usePathname()
+  const router = useRouter()
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showSwitch, setShowSwitch] = useState(false)
+  const [switchEmail, setSwitchEmail] = useState('')
+  const [switchPassword, setSwitchPassword] = useState('')
+  const [switching, setSwitching] = useState(false)
+  const [switchError, setSwitchError] = useState('')
 
   const activeIndex = navItems.findIndex((item) => item.href === pathname)
 
   return (
+    <>
     <header className="shrink-0 relative z-30 pt-4 px-4 pb-2 w-full max-w-7xl mx-auto flex flex-col items-center">
       {/* Logo and User */}
       <div className="w-full flex justify-between items-center mb-4">
@@ -41,7 +48,7 @@ export function DashboardNav({ user }: DashboardNavProps) {
         <div className="relative">
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-2 bg-white/80 backdrop-blur-md px-4 py-2 rounded-full border border-gray-200 hover:border-gray-300 transition-colors"
+            className="flex items-center gap-2 bg-white px-4 py-2 rounded-full border border-gray-200 hover:border-gray-300 transition-colors shadow-sm"
           >
             <div className="w-6 h-6 rounded-full bg-zinc-900 text-white flex items-center justify-center text-xs font-bold">
               {user.name?.[0]?.toUpperCase() || 'U'}
@@ -55,14 +62,23 @@ export function DashboardNav({ user }: DashboardNavProps) {
           {showUserMenu && (
             <>
               <div
-                className="fixed inset-0 z-10"
+                className="fixed inset-0 z-50"
                 onClick={() => setShowUserMenu(false)}
               />
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-20">
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-2xl border border-gray-200 overflow-hidden z-[60] animate-in fade-in zoom-in-95 duration-200">
                 <div className="px-4 py-3 border-b border-gray-100">
                   <p className="text-sm font-medium text-zinc-900 truncate">{user.name}</p>
                   <p className="text-xs text-zinc-500 truncate">{user.email}</p>
                 </div>
+                <button
+                  onClick={() => {
+                    setShowSwitch(true)
+                    setShowUserMenu(false)
+                  }}
+                  className="w-full px-4 py-3 text-left text-sm text-zinc-700 hover:bg-zinc-50 flex items-center gap-2"
+                >
+                  切换账号
+                </button>
                 <button
                   onClick={() => signOut({ callbackUrl: '/' })}
                   className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
@@ -107,5 +123,98 @@ export function DashboardNav({ user }: DashboardNavProps) {
         })}
       </nav>
     </header>
+    {showSwitch && (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => {
+          if (!switching) {
+            setShowSwitch(false)
+            setSwitchError('')
+            setSwitchEmail('')
+            setSwitchPassword('')
+          }
+        }} />
+        <div className="relative z-10 bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-gray-200 p-6 animate-in fade-in zoom-in-95 duration-200">
+          <h3 className="text-base font-black text-zinc-900 mb-3">切换账号</h3>
+          <div className="space-y-3">
+            <input
+              type="email"
+              value={switchEmail}
+              onChange={(e) => {
+                setSwitchEmail(e.target.value)
+                setSwitchError('')
+              }}
+              placeholder="邮箱"
+              disabled={switching}
+              className="w-full bg-zinc-50 border-none rounded-xl text-sm p-3 text-zinc-900 focus:ring-2 focus:ring-zinc-200 disabled:opacity-50"
+            />
+            <input
+              type="password"
+              value={switchPassword}
+              onChange={(e) => {
+                setSwitchPassword(e.target.value)
+                setSwitchError('')
+              }}
+              placeholder="密码"
+              disabled={switching}
+              className="w-full bg-zinc-50 border-none rounded-xl text-sm p-3 text-zinc-900 focus:ring-2 focus:ring-zinc-200 disabled:opacity-50"
+            />
+            {switchError && (
+              <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 p-3 rounded-xl">
+                <AlertCircle size={16} />
+                {switchError}
+              </div>
+            )}
+            <button
+              onClick={async () => {
+                setSwitching(true)
+                setSwitchError('')
+                try {
+                  // 先登出当前账号
+                  await signOut({ redirect: false })
+                  // 尝试登录新账号
+                  const result = await signIn('credentials', {
+                    email: switchEmail,
+                    password: switchPassword,
+                    redirect: false,
+                  })
+                  if (result?.error) {
+                    setSwitchError('邮箱或密码错误')
+                    setSwitching(false)
+                  } else {
+                    // 登录成功，关闭弹窗并刷新页面
+                    setSwitching(false)
+                    setShowSwitch(false)
+                    setSwitchEmail('')
+                    setSwitchPassword('')
+                    // 强制刷新整个页面以更新所有状态
+                    window.location.href = '/dashboard'
+                  }
+                } catch {
+                  setSwitchError('切换失败，请重试')
+                  setSwitching(false)
+                }
+              }}
+              disabled={switching || !switchEmail || !switchPassword}
+              className="w-full bg-zinc-900 text-white font-bold py-3 rounded-xl hover:bg-black transition-all disabled:opacity-50"
+            >
+              {switching ? '切换中…' : '切换登录'}
+            </button>
+            <button
+              onClick={() => {
+                setShowSwitch(false)
+                setSwitchError('')
+                setSwitchEmail('')
+                setSwitchPassword('')
+              }}
+              disabled={switching}
+              className="w-full text-zinc-500 text-sm py-2 hover:text-zinc-700 disabled:opacity-50"
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }
