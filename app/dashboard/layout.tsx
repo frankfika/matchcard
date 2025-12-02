@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { DashboardNav } from '@/components/dashboard/DashboardNav'
+import { getApplicationStats } from '@/app/actions/application'
 
 export default async function DashboardLayout({
   children,
@@ -13,10 +14,13 @@ export default async function DashboardLayout({
     redirect('/login')
   }
 
+  const statsResult = await getApplicationStats()
+  const stats = statsResult.stats || { pending: 0, needAnswer: 0 }
+
   return (
     <div className="flex flex-col h-[100dvh] bg-zinc-100 font-sans text-zinc-900 relative selection:bg-zinc-900 selection:text-white overflow-hidden">
       {/* Header */}
-      <DashboardNav user={session.user} />
+      <DashboardNav user={session.user} stats={stats} />
 
       {/* Main Content */}
       <main className="flex-1 relative w-full max-w-7xl mx-auto md:px-6 md:pb-6 min-h-0 overflow-hidden">

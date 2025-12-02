@@ -125,12 +125,56 @@ export function SentList({ applications: initialApplications }: SentListProps) {
     }
   }
 
+  // 计算需要回答追问的数量
+  const needAnswerCount = applications.filter(app => app.status === 'follow_up').length
+  const approvedCount = applications.filter(app => app.status === 'approved').length
+  const pendingCount = applications.filter(app => app.status === 'pending').length
+
   return (
     <div className="flex flex-col h-full bg-gray-50 relative">
       {/* Toast */}
       {toast && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-zinc-900 text-white px-6 py-2 rounded-full text-sm flex items-center gap-2 shadow-xl animate-fade-in-down">
           <Check size={16} /> {toast}
+        </div>
+      )}
+
+      {/* 需要回答追问的警示栏 */}
+      {needAnswerCount > 0 && (
+        <div className="shrink-0 bg-gradient-to-r from-red-50 to-rose-50 border-b-2 border-red-200 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center animate-pulse">
+              <AlertCircle size={16} className="text-red-600" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-red-800">
+                {needAnswerCount} 个追问等待你回答
+              </p>
+              <p className="text-xs text-red-600">
+                请及时回答以提高通过率
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 状态摘要（仅在没有待回答追问时显示） */}
+      {needAnswerCount === 0 && applications.length > 0 && (pendingCount > 0 || approvedCount > 0) && (
+        <div className="shrink-0 bg-gradient-to-r from-gray-50 to-zinc-50 border-b border-gray-100 px-4 py-2">
+          <div className="flex items-center gap-3 text-xs">
+            {pendingCount > 0 && (
+              <span className="text-amber-600">
+                <Clock size={12} className="inline mr-1" />
+                {pendingCount} 个等待回复
+              </span>
+            )}
+            {approvedCount > 0 && (
+              <span className="text-green-600">
+                <CheckCircle size={12} className="inline mr-1" />
+                {approvedCount} 个已通过
+              </span>
+            )}
+          </div>
         </div>
       )}
 

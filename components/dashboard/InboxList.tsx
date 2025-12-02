@@ -199,12 +199,46 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
     return ['pending', 'answered'].includes(status)
   }
 
+  // 计算各种状态数量
+  const pendingCount = applications.filter(app => app.status === 'pending').length
+  const answeredCount = applications.filter(app => app.status === 'answered').length
+  const followUpCount = applications.filter(app => app.status === 'follow_up').length
+  const needActionCount = pendingCount + answeredCount
+
   return (
     <div className="flex flex-col h-full bg-gray-50 relative">
       {/* Toast */}
       {toast && (
         <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-zinc-900 text-white px-6 py-2 rounded-full text-sm flex items-center gap-2 shadow-xl animate-fade-in-down">
           <Check size={16} /> {toast}
+        </div>
+      )}
+
+      {/* 状态摘要栏 */}
+      {applications.length > 0 && needActionCount > 0 && (
+        <div className="shrink-0 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-100 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center">
+                <Clock size={16} className="text-amber-600" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-amber-800">
+                  {needActionCount} 个申请待处理
+                </p>
+                <p className="text-xs text-amber-600">
+                  {pendingCount > 0 && `${pendingCount} 个新申请`}
+                  {pendingCount > 0 && answeredCount > 0 && '、'}
+                  {answeredCount > 0 && `${answeredCount} 个已回复追问`}
+                </p>
+              </div>
+            </div>
+            {followUpCount > 0 && (
+              <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+                {followUpCount} 个追问中
+              </span>
+            )}
+          </div>
         </div>
       )}
 

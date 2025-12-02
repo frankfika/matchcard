@@ -12,6 +12,10 @@ interface DashboardNavProps {
     name?: string | null
     email?: string | null
   }
+  stats?: {
+    pending: number
+    needAnswer: number
+  }
 }
 
 const navItems = [
@@ -20,7 +24,7 @@ const navItems = [
   { href: '/dashboard/sent', label: '我想认识谁', labelShort: '我想认识', icon: Send },
 ]
 
-export function DashboardNav({ user }: DashboardNavProps) {
+export function DashboardNav({ user, stats }: DashboardNavProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [showUserMenu, setShowUserMenu] = useState(false)
@@ -106,6 +110,14 @@ export function DashboardNav({ user }: DashboardNavProps) {
           const Icon = item.icon
           const isActive = pathname === item.href
 
+          // 计算徽章数量
+          let badgeCount = 0
+          if (item.href === '/dashboard/inbox' && stats?.pending) {
+            badgeCount = stats.pending
+          } else if (item.href === '/dashboard/sent' && stats?.needAnswer) {
+            badgeCount = stats.needAnswer
+          }
+
           return (
             <Link
               key={item.href}
@@ -118,6 +130,13 @@ export function DashboardNav({ user }: DashboardNavProps) {
               <Icon size={16} />
               <span className="hidden sm:inline">{item.label}</span>
               <span className="sm:hidden">{item.labelShort}</span>
+              {badgeCount > 0 && (
+                <span className={`absolute -top-1 -right-1 sm:right-2 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold px-1 ${
+                  isActive ? 'bg-white text-zinc-900' : 'bg-red-500 text-white animate-pulse'
+                }`}>
+                  {badgeCount > 99 ? '99+' : badgeCount}
+                </span>
+              )}
             </Link>
           )
         })}
