@@ -31,7 +31,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
   const [shareUrl, setShareUrl] = useState<string>('')
   const [isAiLoading, setIsAiLoading] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
-  const [isEditing, setIsEditing] = useState<boolean>(false)
+  const [isEditing, setIsEditing] = useState<boolean>(true)
   const [isSaving, setIsSaving] = useState(false)
   const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit')
   const [tagInput, setTagInput] = useState('')
