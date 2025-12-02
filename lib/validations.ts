@@ -20,7 +20,7 @@ export const profileSchema = z.object({
   questions: z.array(z.string()).min(1, '至少设置一个问题').max(5, '最多5个问题'),
   contactEmail: z.string().email('请输入有效的邮箱').optional().or(z.literal('')),
   contactWechat: z.string().max(50, '微信号最多50个字符').optional().or(z.literal('')),
-  themeColor: z.enum(['zinc', 'blue', 'rose', 'amber', 'emerald', 'violet']),
+  themeColor: z.enum(['zinc', 'blue', 'rose', 'amber', 'emerald', 'violet', 'red']),
   gender: z.enum(['Male', 'Female', 'Non-binary', 'Any']),
   targetGender: z.enum(['Male', 'Female', 'Non-binary', 'Any']),
   isPublic: z.boolean().optional(),

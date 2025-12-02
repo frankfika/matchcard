@@ -8,11 +8,9 @@ import type { ProfileData, ThemeColor, Gender } from '@/lib/types'
 import { COLORS } from '@/lib/types'
 import { copyToClipboard } from '@/lib/utils'
 import {
-  Wand2,
   Download,
   Link as LinkIcon,
   Loader2,
-  RefreshCcw,
   Save,
   Check,
   Eye,
@@ -30,7 +28,6 @@ interface ProfileEditorProps {
 export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
   const [profile, setProfile] = useState<ProfileData>(initialProfile)
   const [shareUrl, setShareUrl] = useState<string>('')
-  const [isAiLoading, setIsAiLoading] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState<boolean>(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -38,6 +35,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
   const [tagInput, setTagInput] = useState('')
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false)
+  const [showValidationError, setShowValidationError] = useState(false)
 
   const cardRef = useRef<HTMLDivElement>(null)
 
@@ -66,6 +64,13 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
   }
 
   const handleSave = async () => {
+    // 检查必填项
+    const missing = getProfileCompleteness()
+    if (missing.length > 0) {
+      setShowValidationError(true)
+      return
+    }
+
     // 保存前过滤掉空值
     const cleanedProfile = {
       ...profile,
@@ -123,17 +128,6 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
     const newArray = [...profile[field]]
     newArray.splice(index, 1)
     handleProfileChange(field, newArray)
-  }
-
-  const handleAiPolish = async (field: 'about' | 'looking') => {
-    // AI polish 功能需要后端 API
-    setToastMessage('AI 功能开发中')
-    setTimeout(() => setToastMessage(null), 2000)
-  }
-
-  const handleAiQuestions = async () => {
-    setToastMessage('AI 功能开发中')
-    setTimeout(() => setToastMessage(null), 2000)
   }
 
   const addTagFromInput = () => {
@@ -267,6 +261,43 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
         </div>
       )}
 
+      {/* 验证错误对话框 */}
+      {showValidationError && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowValidationError(false)}
+          />
+          <div className="relative z-10 bg-white w-full max-w-sm mx-4 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle size={24} className="text-red-600" />
+              </div>
+              <h3 className="text-lg font-bold text-center text-zinc-900 mb-2">请完善必填信息</h3>
+              <p className="text-sm text-center text-zinc-500 mb-4">
+                以下内容需要填写才能保存：
+              </p>
+              <div className="bg-red-50 rounded-xl p-4 mb-6">
+                <ul className="space-y-2">
+                  {missingFields.map((field, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-red-700">
+                      <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
+                      {field}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <button
+                onClick={() => setShowValidationError(false)}
+                className="w-full py-3 bg-zinc-900 text-white font-bold rounded-xl hover:bg-black transition-colors"
+              >
+                去完善
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Toggle */}
       <div className="md:hidden flex border-b border-gray-100 bg-white sticky top-0 z-20 shrink-0">
         <button
@@ -355,7 +386,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
             </h2>
 
             <div>
-              <label className="block text-xs font-bold text-zinc-800 mb-2 ml-1">昵称</label>
+              <label className="block text-xs font-bold text-zinc-800 mb-2 ml-1">昵称 <span className="text-red-500">*</span></label>
               <input
                 disabled={!isEditing}
                 value={profile.nickname}
@@ -367,7 +398,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
 
             <div className="space-y-5">
               <div>
-                <label className="block text-xs font-bold text-zinc-800 mb-2 ml-1">个人标语</label>
+                <label className="block text-xs font-bold text-zinc-800 mb-2 ml-1">个人标语 <span className="text-red-500">*</span></label>
                 <div className="space-y-2">
                   <textarea
                     rows={2}
@@ -385,7 +416,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                 </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-zinc-800 mb-2 ml-1">标签</label>
+                <label className="block text-xs font-bold text-zinc-800 mb-2 ml-1">标签 <span className="text-red-500">*</span></label>
                 <div className="bg-zinc-50 rounded-2xl p-3 border border-zinc-200 space-y-2">
                   <div className="flex flex-wrap gap-2">
                     {(profile.tags || []).map((t, i) => (
@@ -519,22 +550,8 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
           <section className="space-y-4">
             <div className="flex justify-between items-end mb-2">
               <h2 className="text-xs font-extrabold text-gray-300 uppercase tracking-widest">
-                关于我
+                关于我 <span className="text-red-500">*</span>
               </h2>
-              {isEditing && (
-                <button
-                  onClick={() => handleAiPolish('about')}
-                  disabled={isAiLoading === 'about'}
-                  className="text-[10px] bg-purple-50 text-purple-600 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 hover:bg-purple-100 transition-colors"
-                >
-                  {isAiLoading === 'about' ? (
-                    <Loader2 size={10} className="animate-spin" />
-                  ) : (
-                    <Wand2 size={10} />
-                  )}{' '}
-                  AI 优化
-                </button>
-              )}
             </div>
             <div className="space-y-3">
               {profile.aboutMe.map((item, idx) => (
@@ -571,22 +588,8 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
           <section className="space-y-4">
             <div className="flex justify-between items-end mb-2">
               <h2 className="text-xs font-extrabold text-gray-300 uppercase tracking-widest">
-                我在寻找
+                我在寻找 <span className="text-red-500">*</span>
               </h2>
-              {isEditing && (
-                <button
-                  onClick={() => handleAiPolish('looking')}
-                  disabled={isAiLoading === 'looking'}
-                  className="text-[10px] bg-purple-50 text-purple-600 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 hover:bg-purple-100 transition-colors"
-                >
-                  {isAiLoading === 'looking' ? (
-                    <Loader2 size={10} className="animate-spin" />
-                  ) : (
-                    <Wand2 size={10} />
-                  )}{' '}
-                  AI 优化
-                </button>
-              )}
             </div>
             <div className="space-y-3">
               {profile.lookingFor.map((item, idx) => (
@@ -637,7 +640,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
 
             <div>
               <label className="block text-xs font-bold text-zinc-800 mb-2 ml-1">
-                我的微信号（隐藏）
+                我的微信号 <span className="text-red-500">*</span>
               </label>
               <input
                 disabled={!isEditing}
@@ -651,22 +654,8 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
             <div className="pt-8 border-t border-zinc-100">
               <div className="flex justify-between items-center mb-4">
                 <label className="block text-xs font-extrabold text-zinc-400 uppercase tracking-widest">
-                  对方需回答的问题
+                  对方需回答的问题 <span className="text-red-500">*</span>
                 </label>
-                {isEditing && (
-                  <button
-                    onClick={handleAiQuestions}
-                    disabled={isAiLoading === 'questions'}
-                    className="text-[10px] bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg font-bold flex items-center gap-1 hover:bg-blue-100 transition-colors"
-                  >
-                    {isAiLoading === 'questions' ? (
-                      <Loader2 size={10} className="animate-spin" />
-                    ) : (
-                      <RefreshCcw size={10} />
-                    )}{' '}
-                    AI 生成
-                  </button>
-                )}
               </div>
               <div className="space-y-3">
                 {profile.questions.map((item, idx) => (
@@ -735,7 +724,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                 <LinkIcon size={20} />
               </button>
               <button
-                onClick={downloadImage}
+                onClick={() => downloadImage()}
                 className={`p-3 rounded-full shadow-lg shadow-black/10 text-white transition-all hover:scale-110 active:scale-95 ${
                   !isEditing ? 'bg-zinc-900 hover:bg-black' : 'bg-zinc-400 hover:bg-zinc-500'
                 }`}
