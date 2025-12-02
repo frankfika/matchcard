@@ -347,7 +347,7 @@ export async function sendFollowUp(data: {
     }
 
     // 获取现有追问记录
-    const existingFollowUps = (application.followUps as FollowUp[]) || []
+    const existingFollowUps = (application.followUps as unknown as FollowUp[]) || []
 
     // 添加新的追问
     const newFollowUp: FollowUp = {
@@ -407,7 +407,7 @@ export async function answerFollowUp(data: {
     }
 
     // 获取现有追问记录
-    const existingFollowUps = (application.followUps as FollowUp[]) || []
+    const existingFollowUps = (application.followUps as unknown as FollowUp[]) || []
     if (existingFollowUps.length === 0) {
       return { error: '没有追问需要回答' }
     }
