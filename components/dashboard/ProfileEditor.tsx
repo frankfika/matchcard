@@ -47,7 +47,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
     if (!profile.tags?.length) missing.push('标签')
     if (!profile.aboutMe?.some(item => item.trim())) missing.push('关于我')
     if (!profile.lookingFor?.some(item => item.trim())) missing.push('我在寻找')
-    if (!profile.questions?.some(item => item.trim())) missing.push('筛选问题')
+    if (!profile.questions?.some(item => item.trim())) missing.push('对方需回答的问题')
     if (!profile.contactWechat?.trim()) missing.push('微信号')
     return missing
   }
@@ -586,7 +586,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
             <div className="pt-8 border-t border-zinc-100">
               <div className="flex justify-between items-center mb-4">
                 <label className="block text-xs font-extrabold text-zinc-400 uppercase tracking-widest">
-                  筛选问题
+                  对方需回答的问题
                 </label>
                 {isEditing && (
                   <button
@@ -613,7 +613,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                       disabled={!isEditing}
                       value={item}
                       onChange={(e) => handleArrayChange('questions', idx, e.target.value)}
-                      placeholder={idx === 0 ? '示例：你最近在读的一本书是什么？' : '添加更多筛选问题...'}
+                      placeholder={idx === 0 ? '示例：你最近在读的一本书是什么？' : '添加更多问题...'}
                       className="flex-1 bg-blue-50/50 border-none rounded-2xl text-sm p-4 font-medium text-zinc-700 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all disabled:cursor-not-allowed placeholder:text-zinc-300"
                     />
                     {isEditing && (
