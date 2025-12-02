@@ -8,7 +8,6 @@ import {
   Download,
   ChevronDown,
   ChevronUp,
-  MessageCircle,
   Copy,
   Check,
   X,
@@ -16,10 +15,6 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
-  User,
-  Search,
-  ArrowRight,
-  Hash,
   HelpCircle,
   Send,
 } from 'lucide-react'
@@ -319,138 +314,141 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
 
               {expandedId === app.id && (
                 <div
-                  className="px-4 pb-4 border-t border-gray-50 bg-gray-50/30 cursor-default"
+                  className="px-4 pb-4 border-t border-gray-100 cursor-default"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="space-y-4 mt-4">
-                    {/* 申请者名片详情 */}
-                    {app.applicantProfile && (
-                      <div className="bg-gradient-to-br from-zinc-50 to-white rounded-xl border border-zinc-200 overflow-hidden">
-                        {/* 名片头部 */}
-                        <div className="p-4 border-b border-zinc-100">
-                          <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 uppercase mb-3">
-                            <User size={12} />
-                            申请者名片
+                    {/* TA的联系方式 - 已通过时显示在最上方 */}
+                    {app.status === 'approved' && app.applicantWechat && (
+                      <div className="bg-green-50 rounded-xl border border-green-200 p-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-bold text-green-700 mb-1">🎉 已通过 · TA的微信号</p>
+                            <p className="text-lg font-mono font-bold text-green-800">{app.applicantWechat}</p>
                           </div>
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="text-base font-bold text-zinc-900">
-                                {app.applicantProfile.nickname}
-                              </p>
-                              {app.applicantProfile.title && (
-                                <p className="text-sm text-zinc-600 mt-1">
-                                  {app.applicantProfile.title}
-                                </p>
-                              )}
-                            </div>
+                          <button
+                            onClick={() => {
+                              copyToClipboard(app.applicantWechat)
+                              showToast('微信号已复制')
+                            }}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 text-sm font-bold"
+                          >
+                            <Copy size={14} />
+                            复制
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* TA的名片摘要 - 只有当有名片时才显示 */}
+                    {app.applicantProfile && (
+                      <div className="bg-zinc-50 rounded-xl border border-zinc-200 p-4">
+                        <p className="text-xs font-bold text-zinc-500 mb-3">📇 TA的名片</p>
+                        <div className="space-y-3">
+                          {/* 基本信息 */}
+                          <div>
+                            <p className="font-bold text-zinc-900">{app.applicantProfile.nickname}</p>
+                            {app.applicantProfile.title && (
+                              <p className="text-sm text-zinc-600 mt-0.5">{app.applicantProfile.title}</p>
+                            )}
                           </div>
                           {/* 标签 */}
                           {app.applicantProfile.tags?.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-3">
+                            <div className="flex flex-wrap gap-1.5">
                               {app.applicantProfile.tags.map((t, i) => (
-                                <span
-                                  key={i}
-                                  className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 bg-zinc-100 text-zinc-700 rounded-full"
-                                >
-                                  <Hash size={10} /> {t}
+                                <span key={i} className="text-xs font-medium px-2 py-1 bg-white text-zinc-600 rounded-full border border-zinc-200">
+                                  #{t}
                                 </span>
                               ))}
                             </div>
                           )}
-                        </div>
-
-                        {/* 关于TA */}
-                        {app.applicantProfile.aboutMe?.some(item => item.trim()) && (
-                          <div className="p-4 border-b border-zinc-100">
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 uppercase mb-2">
-                              <User size={12} />
-                              关于 TA
+                          {/* 关于TA */}
+                          {app.applicantProfile.aboutMe?.some(item => item.trim()) && (
+                            <div>
+                              <p className="text-xs text-zinc-400 mb-1">关于TA</p>
+                              <ul className="text-sm text-zinc-700 space-y-1">
+                                {app.applicantProfile.aboutMe.filter(item => item.trim()).map((item, i) => (
+                                  <li key={i}>• {item}</li>
+                                ))}
+                              </ul>
                             </div>
-                            <ul className="space-y-1.5">
-                              {app.applicantProfile.aboutMe.filter(item => item.trim()).map((item, i) => (
-                                <li key={i} className="text-sm text-zinc-700 flex items-start gap-2">
-                                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-zinc-300 shrink-0" />
-                                  {item}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {/* TA在寻找 */}
-                        {app.applicantProfile.lookingFor?.some(item => item.trim()) && (
-                          <div className="p-4">
-                            <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 uppercase mb-2">
-                              <Search size={12} />
-                              TA 在寻找
+                          )}
+                          {/* TA在寻找 */}
+                          {app.applicantProfile.lookingFor?.some(item => item.trim()) && (
+                            <div>
+                              <p className="text-xs text-zinc-400 mb-1">TA在寻找</p>
+                              <ul className="text-sm text-zinc-700 space-y-1">
+                                {app.applicantProfile.lookingFor.filter(item => item.trim()).map((item, i) => (
+                                  <li key={i}>→ {item}</li>
+                                ))}
+                              </ul>
                             </div>
-                            <ul className="space-y-1.5">
-                              {app.applicantProfile.lookingFor.filter(item => item.trim()).map((item, i) => (
-                                <li key={i} className="text-sm text-zinc-700 flex items-start gap-2">
-                                  <ArrowRight size={14} className="mt-0.5 text-zinc-400 shrink-0" />
-                                  {item}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* 初始问答部分 */}
-                    {app.questions.length > 0 && (
-                      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
-                        <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-                          <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase">
-                            <MessageCircle size={12} />
-                            初始问答
-                          </div>
-                        </div>
-                        <div className="p-4 space-y-4">
-                          {app.questions.map((q, i) => (
-                            <div key={i}>
-                              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">{q}</p>
-                              <p className="text-sm text-gray-800 bg-gray-50 p-2.5 rounded-lg leading-relaxed">
-                                {app.answers[i]}
-                              </p>
-                            </div>
-                          ))}
+                          )}
                         </div>
                       </div>
                     )}
 
-                    {/* 追问记录 */}
-                    {app.followUps && app.followUps.length > 0 && (
-                      <div className="space-y-2">
-                        {app.followUps.map((followUp, fIdx) => (
-                          <div key={fIdx} className="bg-purple-50 rounded-lg border border-purple-100 p-3">
-                            <div className="flex items-start gap-2">
-                              <HelpCircle size={14} className="text-purple-500 mt-0.5 shrink-0" />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm text-purple-700 font-medium">{followUp.questions[0]}</p>
-                                {followUp.answers[0] ? (
-                                  <p className="text-sm text-gray-700 mt-2 bg-white p-2 rounded border border-purple-100">
-                                    {followUp.answers[0]}
-                                  </p>
-                                ) : (
-                                  <p className="text-xs text-purple-400 mt-1 italic">等待回答...</p>
-                                )}
+                    {/* 问答记录 - 对话式布局 */}
+                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                      <div className="p-3 bg-gray-50 border-b border-gray-100">
+                        <p className="text-xs font-bold text-gray-500">💬 问答记录</p>
+                      </div>
+                      <div className="p-4 space-y-4">
+                        {/* 初始问答 */}
+                        {app.questions.map((q, i) => (
+                          <div key={i} className="space-y-2">
+                            {/* 你的问题 - 右对齐 */}
+                            <div className="flex justify-end">
+                              <div className="bg-zinc-900 text-white px-3 py-2 rounded-2xl rounded-tr-sm max-w-[85%]">
+                                <p className="text-sm">{q}</p>
+                              </div>
+                            </div>
+                            {/* TA的回答 - 左对齐 */}
+                            <div className="flex justify-start">
+                              <div className="bg-gray-100 text-gray-800 px-3 py-2 rounded-2xl rounded-tl-sm max-w-[85%]">
+                                <p className="text-sm">{app.answers[i] || '未回答'}</p>
                               </div>
                             </div>
                           </div>
                         ))}
+
+                        {/* 追问记录 */}
+                        {app.followUps && app.followUps.map((followUp, fIdx) => (
+                          <div key={`followup-${fIdx}`} className="space-y-2 pt-3 border-t border-gray-100">
+                            <p className="text-[10px] text-center text-gray-400">— 追问 {fIdx + 1} —</p>
+                            {/* 你的追问 - 右对齐 */}
+                            <div className="flex justify-end">
+                              <div className="bg-blue-600 text-white px-3 py-2 rounded-2xl rounded-tr-sm max-w-[85%]">
+                                <p className="text-sm">{followUp.questions[0]}</p>
+                              </div>
+                            </div>
+                            {/* TA的回答 - 左对齐 */}
+                            <div className="flex justify-start">
+                              {followUp.answers[0] ? (
+                                <div className="bg-gray-100 text-gray-800 px-3 py-2 rounded-2xl rounded-tl-sm max-w-[85%]">
+                                  <p className="text-sm">{followUp.answers[0]}</p>
+                                </div>
+                              ) : (
+                                <div className="bg-amber-50 text-amber-600 px-3 py-2 rounded-2xl rounded-tl-sm border border-amber-200">
+                                  <p className="text-sm italic">等待TA回答...</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    )}
+                    </div>
 
                     {/* 追问输入区 */}
                     {followUpMode === app.id && (
                       <div className="bg-blue-50 rounded-xl border border-blue-200 p-4">
+                        <p className="text-xs font-bold text-blue-700 mb-2">输入追问</p>
                         <div className="flex gap-2">
                           <input
                             type="text"
                             value={followUpQuestion}
                             onChange={(e) => setFollowUpQuestion(e.target.value)}
-                            placeholder="输入追问内容..."
+                            placeholder="想再问TA什么..."
                             className="flex-1 text-sm p-3 rounded-lg border border-blue-200 bg-white focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
                             onKeyDown={(e) => e.key === 'Enter' && handleSendFollowUp(app.id)}
                           />
@@ -475,41 +473,14 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
                       </div>
                     )}
 
-                    {/* 微信号显示 */}
-                    <div className="pt-2">
-                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">
-                        对方微信号{' '}
-                        {app.status === 'approved' ? (
-                          <span className="text-green-600">(已显示)</span>
-                        ) : (
-                          <span className="text-amber-600">(待审批)</span>
-                        )}
-                      </p>
-                      <div
-                        className={`text-sm font-mono p-3 rounded border flex items-center justify-between ${
-                          app.status === 'approved'
-                            ? 'bg-green-50 text-green-800 border-green-100'
-                            : 'bg-zinc-100 text-zinc-400 border-zinc-200'
-                        }`}
-                      >
-                        <span>
-                          {app.status === 'approved'
-                            ? app.applicantWechat
-                            : app.applicantWechat.replace(/./g, '*')}
-                        </span>
-                        {app.status === 'approved' && (
-                          <button
-                            onClick={() => {
-                              copyToClipboard(app.applicantWechat)
-                              showToast('微信号已复制')
-                            }}
-                            className="text-green-600 hover:text-green-700"
-                          >
-                            <Copy size={14} />
-                          </button>
-                        )}
+                    {/* 待审批时显示遮罩的微信号 */}
+                    {app.status !== 'approved' && app.applicantWechat && (
+                      <div className="bg-zinc-100 rounded-xl border border-zinc-200 p-4">
+                        <p className="text-xs font-bold text-zinc-400 mb-1">TA的微信号</p>
+                        <p className="text-sm font-mono text-zinc-400">{app.applicantWechat.replace(/./g, '•')}</p>
+                        <p className="text-xs text-zinc-400 mt-2">通过申请后可见</p>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* 操作按钮 */}
