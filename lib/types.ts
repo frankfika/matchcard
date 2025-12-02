@@ -19,7 +19,7 @@ export interface ProfileData {
 
 export type Gender = 'Male' | 'Female' | 'Non-binary' | 'Any'
 
-export type ThemeColor = 'zinc' | 'blue' | 'rose' | 'amber' | 'emerald' | 'violet'
+export type ThemeColor = 'zinc' | 'blue' | 'rose' | 'amber' | 'emerald' | 'violet' | 'red'
 
 export const COLORS: Record<ThemeColor, string> = {
   zinc: 'bg-gradient-to-br from-zinc-800 via-zinc-900 to-black',
@@ -28,6 +28,7 @@ export const COLORS: Record<ThemeColor, string> = {
   amber: 'bg-gradient-to-br from-amber-300 via-orange-500 to-red-600',
   emerald: 'bg-gradient-to-br from-emerald-400 via-teal-600 to-cyan-800',
   violet: 'bg-gradient-to-br from-violet-500 via-purple-600 to-fuchsia-900',
+  red: 'bg-gradient-to-br from-red-500 via-red-600 to-red-900',
 }
 
 export const DEFAULT_PROFILE: ProfileData = {

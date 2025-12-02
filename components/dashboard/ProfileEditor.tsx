@@ -208,6 +208,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
     amber: 'Sunset',
     emerald: 'Cyber Mint',
     violet: 'Ultra Violet',
+    red: 'Crimson',
   }
 
   return (
@@ -399,7 +400,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
 
             <div>
               <label className="block text-xs font-bold text-zinc-800 mb-3 ml-1">主题色</label>
-              <div className="grid grid-cols-6 gap-3">
+              <div className="grid grid-cols-7 gap-3">
                 {(Object.keys(COLORS) as ThemeColor[]).map((c) => (
                   <button
                     key={c}
