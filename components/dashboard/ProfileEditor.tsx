@@ -123,7 +123,6 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
         const element = cardRef.current
         const dataUrl = await toPng(element, {
           cacheBust: true,
-          useCORS: true,
           pixelRatio: 3,
           backgroundColor: 'transparent',
           width: element.scrollWidth,
