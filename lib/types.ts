@@ -31,29 +31,17 @@ export const COLORS: Record<ThemeColor, string> = {
 }
 
 export const DEFAULT_PROFILE: ProfileData = {
-  title: '寻找同频灵魂',
-  nickname: 'Mysterious ENTP',
-  tags: ['90后', '创业', 'Web3/AI', 'ENTP'],
-  aboutMe: [
-    '性格随和，成熟，认知高，解决问题能力强',
-    '擅长做菜，喜欢旅游，骑车，网球',
-    '性格：真诚直率，追求本质',
-  ],
-  lookingFor: [
-    '心智成熟，情绪稳定，真诚有责任心',
-    '有共同话题，认知同频，互帮互助',
-    '以长期伴侣为目标，拒绝短期关系',
-  ],
-  questions: [
-    '你最近在读的一本书是什么？',
-    '描述一下你理想的周六是如何度过的？',
-    '你对未来的职业规划是什么？',
-  ],
+  title: '',
+  nickname: '',
+  tags: [],
+  aboutMe: [''],
+  lookingFor: [''],
+  questions: [''],
   contactEmail: '',
   contactWechat: '',
   themeColor: 'zinc',
-  gender: 'Female',
-  targetGender: 'Male',
+  gender: 'Any',
+  targetGender: 'Any',
 }
 
 // 申请状态

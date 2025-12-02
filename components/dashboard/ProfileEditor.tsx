@@ -39,6 +39,21 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
 
   const cardRef = useRef<HTMLDivElement>(null)
 
+  // 检查名片是否填写完整
+  const getProfileCompleteness = () => {
+    const missing: string[] = []
+    if (!profile.nickname?.trim()) missing.push('昵称')
+    if (!profile.title?.trim()) missing.push('个人标语')
+    if (!profile.tags?.length) missing.push('标签')
+    if (!profile.aboutMe?.some(item => item.trim())) missing.push('关于我')
+    if (!profile.lookingFor?.some(item => item.trim())) missing.push('我在寻找')
+    if (!profile.questions?.some(item => item.trim())) missing.push('筛选问题')
+    if (!profile.contactWechat?.trim()) missing.push('微信号')
+    return missing
+  }
+  const missingFields = getProfileCompleteness()
+  const isProfileComplete = missingFields.length === 0
+
   useEffect(() => {
     updateShareUrl()
   }, [profile.shareCode])
@@ -464,7 +479,8 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                     disabled={!isEditing}
                     value={item}
                     onChange={(e) => handleArrayChange('aboutMe', idx, e.target.value)}
-                    className="flex-1 bg-zinc-50 border-none rounded-2xl text-sm p-4 font-medium focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all resize-none leading-relaxed disabled:cursor-not-allowed"
+                    placeholder={idx === 0 ? '示例：性格随和，成熟，解决问题能力强' : '添加更多关于你的描述...'}
+                    className="flex-1 bg-zinc-50 border-none rounded-2xl text-sm p-4 font-medium focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all resize-none leading-relaxed disabled:cursor-not-allowed placeholder:text-zinc-300"
                   />
                   {isEditing && (
                     <button
@@ -515,7 +531,8 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                     disabled={!isEditing}
                     value={item}
                     onChange={(e) => handleArrayChange('lookingFor', idx, e.target.value)}
-                    className="flex-1 bg-zinc-50 border-none rounded-2xl text-sm p-4 font-medium focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all resize-none leading-relaxed disabled:cursor-not-allowed"
+                    placeholder={idx === 0 ? '示例：心智成熟，情绪稳定，真诚有责任心' : '添加更多期望...'}
+                    className="flex-1 bg-zinc-50 border-none rounded-2xl text-sm p-4 font-medium focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all resize-none leading-relaxed disabled:cursor-not-allowed placeholder:text-zinc-300"
                   />
                   {isEditing && (
                     <button
@@ -596,7 +613,8 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
                       disabled={!isEditing}
                       value={item}
                       onChange={(e) => handleArrayChange('questions', idx, e.target.value)}
-                      className="flex-1 bg-blue-50/50 border-none rounded-2xl text-sm p-4 font-medium text-zinc-700 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all disabled:cursor-not-allowed"
+                      placeholder={idx === 0 ? '示例：你最近在读的一本书是什么？' : '添加更多筛选问题...'}
+                      className="flex-1 bg-blue-50/50 border-none rounded-2xl text-sm p-4 font-medium text-zinc-700 focus:ring-2 focus:ring-blue-100 focus:bg-white transition-all disabled:cursor-not-allowed placeholder:text-zinc-300"
                     />
                     {isEditing && (
                       <button
@@ -628,11 +646,14 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
           mobileTab === 'edit' ? 'hidden md:flex' : 'flex h-full'
         }`}
       >
-        {/* 检查是否有联系方式 */}
-        {!profile.contactWechat ? (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-amber-50 text-amber-700 px-4 py-2 rounded-xl text-xs font-bold border border-amber-200 shadow-sm flex items-center gap-2 max-w-xs text-center">
-            <Lock size={14} className="shrink-0" />
-            <span>请先填写微信号才能分享名片</span>
+        {/* 检查名片是否填写完整 */}
+        {!isProfileComplete ? (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-amber-50 text-amber-700 px-4 py-2 rounded-xl text-xs font-bold border border-amber-200 shadow-sm flex flex-col items-center gap-1 max-w-sm text-center">
+            <div className="flex items-center gap-2">
+              <Lock size={14} className="shrink-0" />
+              <span>请完善以下信息才能分享</span>
+            </div>
+            <span className="text-[10px] text-amber-600">{missingFields.join('、')}</span>
           </div>
         ) : (
           <>

@@ -21,7 +21,7 @@ export async function register(data: { name: string; email: string; password: st
     // 加密密码
     const hashedPassword = await bcrypt.hash(validated.password, 12)
 
-    // 创建用户和默认 Profile
+    // 创建用户和默认 Profile（空白模板）
     const user = await prisma.user.create({
       data: {
         name: validated.name,
@@ -30,11 +30,11 @@ export async function register(data: { name: string; email: string; password: st
         profile: {
           create: {
             nickname: validated.name,
-            title: DEFAULT_PROFILE.title,
-            tags: DEFAULT_PROFILE.tags,
-            aboutMe: DEFAULT_PROFILE.aboutMe,
-            lookingFor: DEFAULT_PROFILE.lookingFor,
-            questions: DEFAULT_PROFILE.questions,
+            title: '',
+            tags: [],
+            aboutMe: [],
+            lookingFor: [],
+            questions: [],
             themeColor: DEFAULT_PROFILE.themeColor,
             gender: DEFAULT_PROFILE.gender,
             targetGender: DEFAULT_PROFILE.targetGender,
