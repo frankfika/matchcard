@@ -40,9 +40,11 @@ interface ApplyFormProps {
   profile: ProfileForApply
   currentUser: CurrentUserProfile | null
   isOwnProfile?: boolean
+  hasApplied?: boolean
+  applicationStatus?: 'pending' | 'approved' | 'rejected'
 }
 
-export function ApplyForm({ profile, currentUser, isOwnProfile = false }: ApplyFormProps) {
+export function ApplyForm({ profile, currentUser, isOwnProfile = false, hasApplied = false, applicationStatus }: ApplyFormProps) {
   const router = useRouter()
   const [answers, setAnswers] = useState<string[]>(
     new Array(profile.questions.length).fill('')
@@ -52,13 +54,12 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false }: ApplyF
   const [redirectCountdown, setRedirectCountdown] = useState(3)
   const [error, setError] = useState('')
 
-  // 联系方式状态 - 如果用户没有，允许手动填写
+  // 联系方式状态 - 如果用户没有微信，允许手动填写
   const [inputWechat, setInputWechat] = useState('')
-  const [inputEmail, setInputEmail] = useState('')
 
-  // 提交成功后自动跳转
+  // 提交成功后或已申请过自动跳转
   useEffect(() => {
-    if (isSubmitted) {
+    if (isSubmitted || hasApplied) {
       const timer = setInterval(() => {
         setRedirectCountdown((prev) => {
           if (prev <= 1) {
@@ -71,7 +72,7 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false }: ApplyF
       }, 1000)
       return () => clearInterval(timer)
     }
-  }, [isSubmitted, router])
+  }, [isSubmitted, hasApplied, router])
 
   const themeClass = COLORS[profile.themeColor as ThemeColor] || COLORS.zinc
 
@@ -81,11 +82,11 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false }: ApplyF
     setAnswers(newAnswers)
   }
 
-  // 检查是否有联系方式（已保存的或者新填写的）
-  const hasExistingContact = currentUser ? !!(currentUser.wechat || currentUser.email) : false
-  const hasNewContact = !!(inputWechat.trim() || inputEmail.trim())
-  const hasContact = hasExistingContact || hasNewContact
-  const isFormValid = answers.every((a) => a.trim().length > 0) && hasContact
+  // 检查是否有微信号（已保存的或者新填写的）
+  const hasExistingWechat = currentUser ? !!currentUser.wechat : false
+  const hasNewWechat = !!inputWechat.trim()
+  const hasWechat = hasExistingWechat || hasNewWechat
+  const isFormValid = answers.every((a) => a.trim().length > 0) && hasWechat
 
   const handleSubmit = async () => {
     if (!isFormValid || !currentUser) return
@@ -93,19 +94,17 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false }: ApplyF
     setIsSubmitting(true)
     setError('')
 
-    // 优先使用已保存的联系方式，否则使用新填写的
+    // 优先使用已保存的微信号，否则使用新填写的
     const wechatToSubmit = currentUser.wechat || inputWechat.trim()
-    const emailToSubmit = currentUser.email || inputEmail.trim()
 
     const result = await submitApplication({
       profileId: profile.id,
       applicantName: currentUser.nickname,
       applicantWechat: wechatToSubmit,
-      applicantEmail: emailToSubmit,
       answers,
       questions: profile.questions,
-      // 如果是新填写的联系方式，标记需要同步到名片
-      syncToProfile: !hasExistingContact && hasNewContact,
+      // 如果是新填写的微信号，标记需要同步到名片
+      syncToProfile: !hasExistingWechat && hasNewWechat,
     })
 
     setIsSubmitting(false)
@@ -115,6 +114,57 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false }: ApplyF
     } else {
       setIsSubmitted(true)
     }
+  }
+
+  // 已经申请过
+  if (hasApplied) {
+    const statusText = {
+      pending: '等待对方审批中',
+      approved: '对方已通过你的申请',
+      rejected: '对方婉拒了你的申请',
+    }
+    const statusColor = {
+      pending: 'bg-amber-100 text-amber-600',
+      approved: 'bg-green-100 text-green-600',
+      rejected: 'bg-red-100 text-red-600',
+    }
+
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className={`w-16 h-16 ${statusColor[applicationStatus || 'pending']} rounded-full flex items-center justify-center mx-auto mb-6`}>
+            <CheckCircle size={32} />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">你已经申请过了</h2>
+          <p className="text-gray-600 mb-4 text-sm">
+            你已向 <strong>{profile.nickname}</strong> 发送过申请
+          </p>
+          <div className="bg-zinc-50 rounded-xl p-4 mb-6">
+            <span className="text-sm font-medium text-zinc-700">
+              当前状态：{statusText[applicationStatus || 'pending']}
+            </span>
+          </div>
+
+          <div className="text-sm text-zinc-500 mb-4">
+            {redirectCountdown > 0 ? (
+              <span>{redirectCountdown} 秒后自动跳转到个人主页...</span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 size={14} className="animate-spin" />
+                正在跳转...
+              </span>
+            )}
+          </div>
+
+          <Link
+            href="/dashboard"
+            className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-zinc-900 text-white rounded-xl hover:bg-black transition-colors font-bold shadow-lg text-sm"
+          >
+            <ArrowRight size={16} /> 返回个人主页
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   // 自己的名片提示
@@ -301,18 +351,12 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false }: ApplyF
                     <span className="text-sm font-medium text-gray-900">{currentUser.wechat}</span>
                   </div>
                 )}
-                {currentUser.email && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-gray-500 uppercase">邮箱</span>
-                    <span className="text-sm font-medium text-gray-900">{currentUser.email}</span>
-                  </div>
-                )}
-                {/* 如果没有联系方式，显示输入框 */}
-                {!currentUser.wechat && !currentUser.email && (
+                {/* 如果没有微信号，显示输入框 */}
+                {!currentUser.wechat && (
                   <div className="space-y-4">
                     <div className="bg-blue-50 text-blue-700 text-sm p-3 rounded-lg flex items-start gap-2">
                       <AlertTriangle size={16} className="shrink-0 mt-0.5" />
-                      <span>你还没有填写联系方式，请在下方填写（填写后会自动同步到你的名片）</span>
+                      <span>你还没有填写微信号，请在下方填写（填写后会自动同步到你的名片）</span>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-gray-500 mb-2">微信号</label>
@@ -324,22 +368,9 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false }: ApplyF
                         className="w-full rounded-xl border-gray-200 shadow-sm focus:border-zinc-500 focus:ring-zinc-500 text-sm p-3 border bg-gray-50"
                       />
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-500 mb-2">邮箱</label>
-                      <input
-                        type="email"
-                        value={inputEmail}
-                        onChange={(e) => setInputEmail(e.target.value)}
-                        placeholder="你的邮箱"
-                        className="w-full rounded-xl border-gray-200 shadow-sm focus:border-zinc-500 focus:ring-zinc-500 text-sm p-3 border bg-gray-50"
-                      />
-                    </div>
-                    <p className="text-[10px] text-gray-400">
-                      至少填写一项联系方式
-                    </p>
                   </div>
                 )}
-                {hasExistingContact && (
+                {hasExistingWechat && (
                   <p className="text-[10px] text-gray-400 flex items-center gap-1 pt-2 border-t border-gray-100">
                     <CheckCircle size={10} /> 以上信息来自你的名片，仅在对方通过后可见
                   </p>

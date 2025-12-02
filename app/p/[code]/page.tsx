@@ -27,6 +27,18 @@ export default async function PublicProfilePage({ params }: PageProps) {
   // 获取当前登录用户的 profile 信息
   const isOwnProfile = session.user.id === result.profile.userId
 
+  // 检查是否已经申请过
+  const existingApplication = await prisma.application.findFirst({
+    where: {
+      profileId: result.profile.id,
+      applicantUserId: session.user.id,
+    },
+    select: {
+      id: true,
+      status: true,
+    },
+  })
+
   const profile = await prisma.profile.findUnique({
     where: { userId: session.user.id },
     select: {
@@ -49,6 +61,8 @@ export default async function PublicProfilePage({ params }: PageProps) {
       profile={result.profile}
       currentUser={currentUserProfile}
       isOwnProfile={isOwnProfile}
+      hasApplied={!!existingApplication}
+      applicationStatus={existingApplication?.status as 'pending' | 'approved' | 'rejected' | undefined}
     />
   )
 }
