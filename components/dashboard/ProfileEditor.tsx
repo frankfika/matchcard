@@ -35,6 +35,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit')
   const [tagInput, setTagInput] = useState('')
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   const cardRef = useRef<HTMLDivElement>(null)
 
@@ -56,6 +57,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
       setToastMessage(result.error)
     } else {
       setIsEditing(false)
+      setHasUnsavedChanges(false)
       setToastMessage('已保存')
     }
     setTimeout(() => setToastMessage(null), 2000)
@@ -67,6 +69,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
 
   const handleProfileChange = (field: keyof ProfileData, value: unknown) => {
     setProfile((prev) => ({ ...prev, [field]: value }))
+    setHasUnsavedChanges(true)
   }
 
   const handleArrayChange = (
@@ -115,6 +118,14 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
   }
 
   const downloadImage = async () => {
+    // 检查是否有未保存的更改
+    if (hasUnsavedChanges) {
+      const confirmed = window.confirm('你有未保存的更改，建议先保存再下载。\n\n点击"确定"继续下载（使用当前内容），点击"取消"返回保存。')
+      if (!confirmed) {
+        return
+      }
+    }
+
     if (cardRef.current) {
       try {
         setToastMessage('生成中...')
