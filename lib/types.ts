@@ -71,6 +71,8 @@ export interface ApplicationData {
     nickname: string
     title: string
     tags: string[]
+    aboutMe: string[]
+    lookingFor: string[]
   }
 }
 

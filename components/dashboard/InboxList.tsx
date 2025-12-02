@@ -16,6 +16,10 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
+  User,
+  Search,
+  ArrowRight,
+  Hash,
 } from 'lucide-react'
 
 interface InboxListProps {
@@ -198,41 +202,100 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="space-y-4 mt-4">
+                    {/* 申请者名片详情 */}
                     {app.applicantProfile && (
-                      <div className="p-3 bg-white rounded-lg border border-gray-100">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">
-                          申请者名片摘要
-                        </p>
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-sm font-bold text-zinc-900">
-                              {app.applicantProfile.nickname}
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              {app.applicantProfile.title}
-                            </p>
+                      <div className="bg-gradient-to-br from-zinc-50 to-white rounded-xl border border-zinc-200 overflow-hidden">
+                        {/* 名片头部 */}
+                        <div className="p-4 border-b border-zinc-100">
+                          <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 uppercase mb-3">
+                            <User size={12} />
+                            申请者名片
                           </div>
-                          <div className="flex flex-wrap gap-1">
-                            {(app.applicantProfile.tags || []).slice(0, 6).map((t, i) => (
-                              <span
-                                key={i}
-                                className="text-[10px] font-bold px-2 py-0.5 bg-zinc-100 text-zinc-700 rounded border"
-                              >
-                                #{t}
-                              </span>
-                            ))}
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="text-base font-bold text-zinc-900">
+                                {app.applicantProfile.nickname}
+                              </p>
+                              {app.applicantProfile.title && (
+                                <p className="text-sm text-zinc-600 mt-1">
+                                  {app.applicantProfile.title}
+                                </p>
+                              )}
+                            </div>
                           </div>
+                          {/* 标签 */}
+                          {app.applicantProfile.tags?.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 mt-3">
+                              {app.applicantProfile.tags.map((t, i) => (
+                                <span
+                                  key={i}
+                                  className="flex items-center gap-1 text-[11px] font-bold px-2 py-1 bg-zinc-100 text-zinc-700 rounded-full"
+                                >
+                                  <Hash size={10} /> {t}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 关于TA */}
+                        {app.applicantProfile.aboutMe?.some(item => item.trim()) && (
+                          <div className="p-4 border-b border-zinc-100">
+                            <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 uppercase mb-2">
+                              <User size={12} />
+                              关于 TA
+                            </div>
+                            <ul className="space-y-1.5">
+                              {app.applicantProfile.aboutMe.filter(item => item.trim()).map((item, i) => (
+                                <li key={i} className="text-sm text-zinc-700 flex items-start gap-2">
+                                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-zinc-300 shrink-0" />
+                                  {item}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        {/* TA在寻找 */}
+                        {app.applicantProfile.lookingFor?.some(item => item.trim()) && (
+                          <div className="p-4">
+                            <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-400 uppercase mb-2">
+                              <Search size={12} />
+                              TA 在寻找
+                            </div>
+                            <ul className="space-y-1.5">
+                              {app.applicantProfile.lookingFor.filter(item => item.trim()).map((item, i) => (
+                                <li key={i} className="text-sm text-zinc-700 flex items-start gap-2">
+                                  <ArrowRight size={14} className="mt-0.5 text-zinc-400 shrink-0" />
+                                  {item}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {/* 问答部分 */}
+                    {app.questions.length > 0 && (
+                      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                        <div className="p-4 border-b border-gray-100 bg-gray-50/50">
+                          <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase">
+                            <MessageCircle size={12} />
+                            问题回答
+                          </div>
+                        </div>
+                        <div className="p-4 space-y-4">
+                          {app.questions.map((q, i) => (
+                            <div key={i}>
+                              <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">{q}</p>
+                              <p className="text-sm text-gray-800 bg-gray-50 p-2.5 rounded-lg leading-relaxed">
+                                {app.answers[i]}
+                              </p>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
-                    {app.questions.map((q, i) => (
-                      <div key={i}>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-1">{q}</p>
-                        <p className="text-sm text-gray-800 bg-white p-2.5 rounded border border-gray-100 leading-relaxed shadow-sm">
-                          {app.answers[i]}
-                        </p>
-                      </div>
-                    ))}
 
                     {/* 微信号显示 */}
                     <div className="pt-2">

@@ -134,6 +134,8 @@ export async function getReceivedApplications() {
               nickname: true,
               title: true,
               tags: true,
+              aboutMe: true,
+              lookingFor: true,
             },
           },
         },
@@ -155,7 +157,13 @@ export async function getReceivedApplications() {
       createdAt: app.createdAt.toISOString(),
       updatedAt: app.updatedAt.toISOString(),
       profile: app.profile,
-      applicantProfile: app.applicantUser?.profile ?? undefined
+      applicantProfile: app.applicantUser?.profile ? {
+        nickname: app.applicantUser.profile.nickname,
+        title: app.applicantUser.profile.title,
+        tags: app.applicantUser.profile.tags,
+        aboutMe: app.applicantUser.profile.aboutMe,
+        lookingFor: app.applicantUser.profile.lookingFor,
+      } : undefined
     })),
   }
 }
