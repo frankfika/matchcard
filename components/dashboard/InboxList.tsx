@@ -22,8 +22,6 @@ import {
   Hash,
   HelpCircle,
   Send,
-  Plus,
-  Trash2,
 } from 'lucide-react'
 
 interface InboxListProps {
@@ -39,7 +37,7 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
 
   // 追问相关状态
   const [followUpMode, setFollowUpMode] = useState<string | null>(null) // 正在追问的申请ID
-  const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([''])
+  const [followUpQuestion, setFollowUpQuestion] = useState('')
 
   const showToast = (message: string) => {
     setToast(message)
@@ -51,7 +49,7 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
     // 关闭追问模式
     if (expandedId === id) {
       setFollowUpMode(null)
-      setFollowUpQuestions([''])
+      setFollowUpQuestion('')
     }
   }
 
@@ -97,48 +95,26 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
   // 开始追问
   const startFollowUp = (applicationId: string) => {
     setFollowUpMode(applicationId)
-    setFollowUpQuestions([''])
+    setFollowUpQuestion('')
   }
 
   // 取消追问
   const cancelFollowUp = () => {
     setFollowUpMode(null)
-    setFollowUpQuestions([''])
-  }
-
-  // 添加追问问题
-  const addFollowUpQuestion = () => {
-    setFollowUpQuestions([...followUpQuestions, ''])
-  }
-
-  // 删除追问问题
-  const removeFollowUpQuestion = (index: number) => {
-    if (followUpQuestions.length > 1) {
-      const newQuestions = [...followUpQuestions]
-      newQuestions.splice(index, 1)
-      setFollowUpQuestions(newQuestions)
-    }
-  }
-
-  // 更新追问问题
-  const updateFollowUpQuestion = (index: number, value: string) => {
-    const newQuestions = [...followUpQuestions]
-    newQuestions[index] = value
-    setFollowUpQuestions(newQuestions)
+    setFollowUpQuestion('')
   }
 
   // 发送追问
   const handleSendFollowUp = async (applicationId: string) => {
-    const validQuestions = followUpQuestions.filter(q => q.trim())
-    if (validQuestions.length === 0) {
-      showToast('请至少填写一个问题')
+    if (!followUpQuestion.trim()) {
+      showToast('请填写追问内容')
       return
     }
 
     setProcessingId(applicationId)
     const result = await sendFollowUp({
       applicationId,
-      questions: validQuestions,
+      questions: [followUpQuestion.trim()],
     })
     setProcessingId(null)
 
@@ -154,14 +130,14 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
                 status: 'follow_up',
                 followUps: [
                   ...app.followUps,
-                  { questions: validQuestions, answers: [], createdAt: new Date().toISOString() }
+                  { questions: [followUpQuestion.trim()], answers: [], createdAt: new Date().toISOString() }
                 ]
               }
             : app
         )
       )
       setFollowUpMode(null)
-      setFollowUpQuestions([''])
+      setFollowUpQuestion('')
       showToast('追问已发送')
     }
   }
@@ -411,35 +387,21 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
 
                     {/* 追问记录 */}
                     {app.followUps && app.followUps.length > 0 && (
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {app.followUps.map((followUp, fIdx) => (
-                          <div key={fIdx} className="bg-purple-50 rounded-xl border border-purple-100 overflow-hidden">
-                            <div className="p-4 border-b border-purple-100 bg-purple-100/50">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 text-[10px] font-bold text-purple-600 uppercase">
-                                  <HelpCircle size={12} />
-                                  追问 #{fIdx + 1}
-                                </div>
-                                <span className="text-[10px] text-purple-400">
-                                  {new Date(followUp.createdAt).toLocaleDateString('zh-CN')}
-                                </span>
+                          <div key={fIdx} className="bg-purple-50 rounded-lg border border-purple-100 p-3">
+                            <div className="flex items-start gap-2">
+                              <HelpCircle size={14} className="text-purple-500 mt-0.5 shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-purple-700 font-medium">{followUp.questions[0]}</p>
+                                {followUp.answers[0] ? (
+                                  <p className="text-sm text-gray-700 mt-2 bg-white p-2 rounded border border-purple-100">
+                                    {followUp.answers[0]}
+                                  </p>
+                                ) : (
+                                  <p className="text-xs text-purple-400 mt-1 italic">等待回答...</p>
+                                )}
                               </div>
-                            </div>
-                            <div className="p-4 space-y-4">
-                              {followUp.questions.map((q, qIdx) => (
-                                <div key={qIdx}>
-                                  <p className="text-[10px] font-bold text-purple-500 uppercase mb-1">{q}</p>
-                                  {followUp.answers[qIdx] ? (
-                                    <p className="text-sm text-gray-800 bg-white p-2.5 rounded-lg leading-relaxed border border-purple-100">
-                                      {followUp.answers[qIdx]}
-                                    </p>
-                                  ) : (
-                                    <p className="text-sm text-purple-400 italic bg-white/50 p-2.5 rounded-lg">
-                                      等待对方回答...
-                                    </p>
-                                  )}
-                                </div>
-                              ))}
                             </div>
                           </div>
                         ))}
@@ -448,54 +410,32 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
 
                     {/* 追问输入区 */}
                     {followUpMode === app.id && (
-                      <div className="bg-blue-50 rounded-xl border border-blue-200 p-4 space-y-3">
-                        <div className="flex items-center gap-2 text-[10px] font-bold text-blue-600 uppercase">
-                          <HelpCircle size={12} />
-                          添加追问
-                        </div>
-                        {followUpQuestions.map((q, idx) => (
-                          <div key={idx} className="flex gap-2">
-                            <input
-                              type="text"
-                              value={q}
-                              onChange={(e) => updateFollowUpQuestion(idx, e.target.value)}
-                              placeholder={`问题 ${idx + 1}`}
-                              className="flex-1 text-sm p-3 rounded-lg border border-blue-200 bg-white focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
-                            />
-                            {followUpQuestions.length > 1 && (
-                              <button
-                                onClick={() => removeFollowUpQuestion(idx)}
-                                className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                        <button
-                          onClick={addFollowUpQuestion}
-                          className="w-full py-2 border border-dashed border-blue-300 text-blue-500 text-xs font-bold rounded-lg hover:bg-blue-100 flex items-center justify-center gap-1"
-                        >
-                          <Plus size={14} /> 添加问题
-                        </button>
-                        <div className="flex gap-2 pt-2">
+                      <div className="bg-blue-50 rounded-xl border border-blue-200 p-4">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={followUpQuestion}
+                            onChange={(e) => setFollowUpQuestion(e.target.value)}
+                            placeholder="输入追问内容..."
+                            className="flex-1 text-sm p-3 rounded-lg border border-blue-200 bg-white focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+                            onKeyDown={(e) => e.key === 'Enter' && handleSendFollowUp(app.id)}
+                          />
                           <button
                             onClick={cancelFollowUp}
-                            className="flex-1 py-2 border border-gray-200 bg-white rounded-lg text-gray-600 text-xs font-bold hover:bg-gray-50"
+                            className="px-3 border border-gray-200 bg-white rounded-lg text-gray-500 hover:bg-gray-50"
                           >
-                            取消
+                            <X size={16} />
                           </button>
                           <button
                             onClick={() => handleSendFollowUp(app.id)}
-                            disabled={processingId === app.id}
-                            className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 flex items-center justify-center gap-1 disabled:opacity-50"
+                            disabled={processingId === app.id || !followUpQuestion.trim()}
+                            className="px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                           >
                             {processingId === app.id ? (
-                              <Loader2 size={14} className="animate-spin" />
+                              <Loader2 size={16} className="animate-spin" />
                             ) : (
-                              <Send size={14} />
+                              <Send size={16} />
                             )}
-                            发送追问
                           </button>
                         </div>
                       </div>

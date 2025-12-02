@@ -16,6 +16,7 @@ import {
   Loader2,
   Check,
   AlertCircle,
+  X,
 } from 'lucide-react'
 
 interface SentListProps {
@@ -28,9 +29,9 @@ export function SentList({ applications: initialApplications }: SentListProps) {
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
-  // 追问回答状态
+  // 追问回答状态 - 简化为单个回答
   const [answerMode, setAnswerMode] = useState<string | null>(null)
-  const [followUpAnswers, setFollowUpAnswers] = useState<string[]>([])
+  const [followUpAnswer, setFollowUpAnswer] = useState('')
 
   const showToast = (message: string) => {
     setToast(message)
@@ -54,7 +55,7 @@ export function SentList({ applications: initialApplications }: SentListProps) {
       case 'answered':
         return (
           <span className="flex items-center gap-1 text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
-            <MessageCircle size={12} /> 已回复追问
+            <MessageCircle size={12} /> 已回复
           </span>
         )
       case 'approved':
@@ -76,38 +77,28 @@ export function SentList({ applications: initialApplications }: SentListProps) {
 
   // 开始回答追问
   const startAnswering = (app: ApplicationData) => {
-    if (app.followUps && app.followUps.length > 0) {
-      const lastFollowUp = app.followUps[app.followUps.length - 1]
-      setAnswerMode(app.id)
-      setFollowUpAnswers(new Array(lastFollowUp.questions.length).fill(''))
-      setExpandedId(app.id)
-    }
+    setAnswerMode(app.id)
+    setFollowUpAnswer('')
+    setExpandedId(app.id)
   }
 
   // 取消回答
   const cancelAnswering = () => {
     setAnswerMode(null)
-    setFollowUpAnswers([])
-  }
-
-  // 更新回答
-  const updateAnswer = (index: number, value: string) => {
-    const newAnswers = [...followUpAnswers]
-    newAnswers[index] = value
-    setFollowUpAnswers(newAnswers)
+    setFollowUpAnswer('')
   }
 
   // 提交回答
-  const handleSubmitAnswers = async (applicationId: string) => {
-    if (followUpAnswers.some(a => !a.trim())) {
-      showToast('请回答所有问题')
+  const handleSubmitAnswer = async (applicationId: string) => {
+    if (!followUpAnswer.trim()) {
+      showToast('请填写回答')
       return
     }
 
     setProcessingId(applicationId)
     const result = await answerFollowUp({
       applicationId,
-      answers: followUpAnswers,
+      answers: [followUpAnswer.trim()],
     })
     setProcessingId(null)
 
@@ -121,7 +112,7 @@ export function SentList({ applications: initialApplications }: SentListProps) {
             const updatedFollowUps = [...app.followUps]
             updatedFollowUps[updatedFollowUps.length - 1] = {
               ...updatedFollowUps[updatedFollowUps.length - 1],
-              answers: followUpAnswers,
+              answers: [followUpAnswer.trim()],
             }
             return { ...app, status: 'answered', followUps: updatedFollowUps }
           }
@@ -129,7 +120,7 @@ export function SentList({ applications: initialApplications }: SentListProps) {
         })
       )
       setAnswerMode(null)
-      setFollowUpAnswers([])
+      setFollowUpAnswer('')
       showToast('回答已提交')
     }
   }
@@ -167,90 +158,86 @@ export function SentList({ applications: initialApplications }: SentListProps) {
                 }`}
               >
                 <div
-                  className="p-5 cursor-pointer"
+                  className="p-4 cursor-pointer"
                   onClick={() => setExpandedId(expandedId === app.id ? null : app.id)}
                 >
-                  <div className="flex justify-between items-start mb-3">
+                  <div className="flex justify-between items-start mb-2">
                     <div>
-                      <h3 className="font-bold text-gray-900 text-base">
+                      <h3 className="font-bold text-gray-900">
                         {app.profile?.nickname || app.profile?.title || '名片'}
                       </h3>
-                      <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+                      <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
                         <Clock size={12} />
-                        {new Date(app.createdAt).toLocaleDateString('zh-CN')}{' '}
-                        {new Date(app.createdAt).toLocaleTimeString('zh-CN', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        {new Date(app.createdAt).toLocaleDateString('zh-CN')}
                       </div>
                     </div>
                     {getStatusBadge(app.status)}
                   </div>
 
                   {/* 需要回答追问的提示 */}
-                  {hasUnansweredFollowUp && (
-                    <div className="bg-red-50 border border-red-100 rounded-lg p-3 mb-3">
-                      <p className="text-xs font-bold text-red-600 flex items-center gap-1">
-                        <AlertCircle size={14} />
-                        对方向你发起了追问，请尽快回答
-                      </p>
+                  {hasUnansweredFollowUp && lastFollowUp && (
+                    <div className="bg-red-50 border border-red-100 rounded-lg p-3 mt-2">
+                      <p className="text-xs text-red-500 mb-1">对方追问:</p>
+                      <p className="text-sm text-red-700 font-medium">{lastFollowUp.questions[0]}</p>
                     </div>
                   )}
-
-                  {/* 显示回答摘要 */}
-                  <div className="bg-gray-50 p-3 rounded-lg text-xs text-gray-500">
-                    <p className="font-medium text-gray-700 mb-1">你的初始回答:</p>
-                    <p className="line-clamp-2 italic">{app.answers.join(' | ')}</p>
-                  </div>
                 </div>
 
                 {/* 展开详情 */}
                 {expandedId === app.id && (
-                  <div className="px-5 pb-5 border-t border-gray-100 bg-gray-50/50">
+                  <div className="px-4 pb-4 border-t border-gray-100 bg-gray-50/50">
                     {/* 追问历史 */}
                     {app.followUps && app.followUps.length > 0 && (
-                      <div className="mt-4 space-y-3">
-                        <p className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1">
-                          <HelpCircle size={12} /> 追问记录
-                        </p>
-                        {app.followUps.map((followUp, fIdx) => (
-                          <div key={fIdx} className="bg-purple-50 rounded-xl border border-purple-100 overflow-hidden">
-                            <div className="p-3 border-b border-purple-100 bg-purple-100/50">
-                              <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-bold text-purple-600 uppercase">
-                                  追问 #{fIdx + 1}
-                                </span>
-                                <span className="text-[10px] text-purple-400">
-                                  {new Date(followUp.createdAt).toLocaleDateString('zh-CN')}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="p-3 space-y-3">
-                              {followUp.questions.map((q, qIdx) => (
-                                <div key={qIdx}>
-                                  <p className="text-[10px] font-bold text-purple-500 mb-1">{q}</p>
-                                  {followUp.answers[qIdx] ? (
-                                    <p className="text-sm text-gray-800 bg-white p-2 rounded-lg border border-purple-100">
-                                      {followUp.answers[qIdx]}
+                      <div className="mt-4 space-y-2">
+                        {app.followUps.map((followUp, fIdx) => {
+                          const isLastUnanswered = fIdx === app.followUps.length - 1 && !followUp.answers[0]
+
+                          return (
+                            <div key={fIdx} className="bg-purple-50 rounded-lg border border-purple-100 p-3">
+                              <div className="flex items-start gap-2">
+                                <HelpCircle size={14} className="text-purple-500 mt-0.5 shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm text-purple-700 font-medium">{followUp.questions[0]}</p>
+                                  {followUp.answers[0] ? (
+                                    <p className="text-sm text-gray-700 mt-2 bg-white p-2 rounded border border-purple-100">
+                                      {followUp.answers[0]}
                                     </p>
-                                  ) : answerMode === app.id && fIdx === app.followUps.length - 1 ? (
-                                    <textarea
-                                      value={followUpAnswers[qIdx] || ''}
-                                      onChange={(e) => updateAnswer(qIdx, e.target.value)}
-                                      placeholder="请输入你的回答..."
-                                      rows={2}
-                                      className="w-full text-sm p-2 rounded-lg border border-purple-200 bg-white focus:ring-2 focus:ring-purple-300 resize-none"
-                                    />
+                                  ) : isLastUnanswered && answerMode === app.id ? (
+                                    <div className="mt-2 flex gap-2">
+                                      <input
+                                        type="text"
+                                        value={followUpAnswer}
+                                        onChange={(e) => setFollowUpAnswer(e.target.value)}
+                                        placeholder="输入回答..."
+                                        className="flex-1 text-sm p-2 rounded-lg border border-purple-200 bg-white focus:ring-2 focus:ring-purple-300"
+                                        onKeyDown={(e) => e.key === 'Enter' && handleSubmitAnswer(app.id)}
+                                      />
+                                      <button
+                                        onClick={cancelAnswering}
+                                        className="px-2 border border-gray-200 bg-white rounded-lg text-gray-500 hover:bg-gray-50"
+                                      >
+                                        <X size={16} />
+                                      </button>
+                                      <button
+                                        onClick={() => handleSubmitAnswer(app.id)}
+                                        disabled={processingId === app.id || !followUpAnswer.trim()}
+                                        className="px-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+                                      >
+                                        {processingId === app.id ? (
+                                          <Loader2 size={16} className="animate-spin" />
+                                        ) : (
+                                          <Send size={16} />
+                                        )}
+                                      </button>
+                                    </div>
                                   ) : (
-                                    <p className="text-sm text-red-400 italic bg-red-50 p-2 rounded-lg">
-                                      等待你回答...
-                                    </p>
+                                    <p className="text-xs text-red-400 mt-1 italic">等待回答...</p>
                                   )}
                                 </div>
-                              ))}
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     )}
 
@@ -259,7 +246,7 @@ export function SentList({ applications: initialApplications }: SentListProps) {
                       <div className="mt-4">
                         <button
                           onClick={() => startAnswering(app)}
-                          className="w-full py-3 bg-red-600 text-white rounded-xl text-sm font-bold hover:bg-red-700 flex items-center justify-center gap-2 shadow-lg"
+                          className="w-full py-2.5 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 flex items-center justify-center gap-2"
                         >
                           <MessageCircle size={16} />
                           回答追问
@@ -267,60 +254,28 @@ export function SentList({ applications: initialApplications }: SentListProps) {
                       </div>
                     )}
 
-                    {/* 回答模式下的提交按钮 */}
-                    {answerMode === app.id && (
-                      <div className="mt-4 flex gap-2">
-                        <button
-                          onClick={cancelAnswering}
-                          className="flex-1 py-3 border border-gray-200 bg-white rounded-xl text-gray-600 text-sm font-bold hover:bg-gray-50"
-                        >
-                          取消
-                        </button>
-                        <button
-                          onClick={() => handleSubmitAnswers(app.id)}
-                          disabled={processingId === app.id}
-                          className="flex-1 py-3 bg-purple-600 text-white rounded-xl text-sm font-bold hover:bg-purple-700 flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                          {processingId === app.id ? (
-                            <Loader2 size={16} className="animate-spin" />
-                          ) : (
-                            <Send size={16} />
-                          )}
-                          提交回答
-                        </button>
-                      </div>
-                    )}
-
-                    {/* 如果通过了，显示对方回复与微信号 */}
+                    {/* 如果通过了，显示对方微信号 */}
                     {app.status === 'approved' && (
-                      <div className="mt-4 space-y-3">
-                        {app.replyMessage && (
-                          <div className="p-3 bg-green-50 rounded-lg border border-green-100">
-                            <p className="text-xs font-bold text-green-700 mb-1">对方回复:</p>
-                            <p className="text-sm text-green-800">{app.replyMessage}</p>
-                          </div>
-                        )}
-                        {app.profile?.contactWechat && (
-                          <div className="p-3 rounded-lg border bg-white flex items-center justify-between">
+                      <div className="mt-4">
+                        {app.profile?.contactWechat ? (
+                          <div className="p-3 rounded-lg border bg-green-50 border-green-100 flex items-center justify-between">
                             <div>
-                              <p className="text-xs font-bold text-gray-500 mb-1">对方微信号</p>
-                              <p className="text-sm font-mono text-zinc-800">{app.profile.contactWechat}</p>
+                              <p className="text-xs text-green-600 mb-0.5">对方微信号</p>
+                              <p className="text-sm font-mono text-green-800 font-bold">{app.profile.contactWechat}</p>
                             </div>
                             <button
                               onClick={() => {
                                 copyToClipboard(app.profile!.contactWechat!)
                                 showToast('微信号已复制')
                               }}
-                              className="text-zinc-600 hover:text-zinc-900"
-                              title="复制微信号"
+                              className="text-green-600 hover:text-green-700 p-2"
                             >
-                              <Copy size={16} />
+                              <Copy size={18} />
                             </button>
                           </div>
-                        )}
-                        {!app.profile?.contactWechat && (
-                          <div className="p-3 rounded-lg border bg-yellow-50 text-yellow-700 text-xs">
-                            对方暂未设置微信号，请稍后再试或等待对方主动联系。
+                        ) : (
+                          <div className="p-3 rounded-lg border bg-yellow-50 border-yellow-100 text-yellow-700 text-xs">
+                            对方暂未设置微信号
                           </div>
                         )}
                       </div>
