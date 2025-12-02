@@ -2,17 +2,17 @@
 
 import { useState } from 'react'
 import Link from '@/components/ui/LinkNoPrefetch'
-import { useRouter } from 'next/navigation'
 import { Sparkles, Loader2, Mail, Lock, User } from 'lucide-react'
 import { register } from '@/app/actions/auth'
+import { signIn } from 'next-auth/react'
 
 export default function RegisterPage() {
-  const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [loadingMessage, setLoadingMessage] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -20,17 +20,38 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
+      // 步骤1: 注册
+      setLoadingMessage('正在创建账号...')
       const result = await register({ name, email, password })
 
       if (result.error) {
         setError(result.error)
+        setIsLoading(false)
+        setLoadingMessage('')
+        return
+      }
+
+      // 步骤2: 自动登录
+      setLoadingMessage('注册成功，正在登录...')
+      const signInResult = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      })
+
+      if (signInResult?.error) {
+        // 登录失败，但账号已创建，跳转到登录页
+        setLoadingMessage('跳转中...')
+        window.location.href = '/login?registered=true'
       } else {
-        router.push('/login?registered=true')
+        // 登录成功，跳转到 dashboard
+        setLoadingMessage('登录成功，正在跳转...')
+        window.location.href = '/dashboard'
       }
     } catch {
       setError('注册失败，请稍后重试')
-    } finally {
       setIsLoading(false)
+      setLoadingMessage('')
     }
   }
 
@@ -43,12 +64,12 @@ export default function RegisterPage() {
       <div className="relative z-10 w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2">
+          <div className="inline-flex items-center gap-2 select-none">
             <div className="w-12 h-12 bg-black text-white rounded-xl flex items-center justify-center shadow-lg">
               <Sparkles size={24} className="text-yellow-300" />
             </div>
             <span className="font-black text-3xl tracking-tight">SoulSync</span>
-          </Link>
+          </div>
         </div>
 
         {/* Register Form */}
@@ -67,10 +88,11 @@ export default function RegisterPage() {
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-zinc-50 border-none rounded-2xl text-base font-medium p-4 pl-12 text-zinc-900 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all"
+                  className="w-full bg-zinc-50 border-none rounded-2xl text-base font-medium p-4 pl-12 text-zinc-900 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all disabled:opacity-50"
                   placeholder="你的昵称"
                   required
                   minLength={2}
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -85,9 +107,10 @@ export default function RegisterPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-zinc-50 border-none rounded-2xl text-base font-medium p-4 pl-12 text-zinc-900 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all"
+                  className="w-full bg-zinc-50 border-none rounded-2xl text-base font-medium p-4 pl-12 text-zinc-900 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all disabled:opacity-50"
                   placeholder="your@email.com"
                   required
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -102,10 +125,11 @@ export default function RegisterPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-zinc-50 border-none rounded-2xl text-base font-medium p-4 pl-12 text-zinc-900 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all"
+                  className="w-full bg-zinc-50 border-none rounded-2xl text-base font-medium p-4 pl-12 text-zinc-900 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all disabled:opacity-50"
                   placeholder="至少6位字符"
                   required
                   minLength={6}
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -124,7 +148,7 @@ export default function RegisterPage() {
               {isLoading ? (
                 <>
                   <Loader2 size={18} className="animate-spin" />
-                  注册中...
+                  {loadingMessage || '处理中...'}
                 </>
               ) : (
                 '注册'
