@@ -124,7 +124,11 @@ model Application {
   questions String[]
   answers   String[]
 
-  // 状态: pending(待处理), approved(已通过), rejected(已拒绝)
+  // 追问记录（JSON 数组，支持多轮追问）
+  // 格式: [{ questions: string[], answers: string[], createdAt: string }]
+  followUps Json     @default("[]")
+
+  // 状态: pending(待处理), follow_up(追问中), answered(已回复追问), approved(已通过), rejected(已拒绝)
   status    String   @default("pending")
 
   // 处理备注

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { handleApplication } from '@/app/actions/application'
+import { handleApplication, sendFollowUp } from '@/app/actions/application'
 import { copyToClipboard } from '@/lib/utils'
 import type { ApplicationData } from '@/lib/types'
 import {
@@ -20,6 +20,10 @@ import {
   Search,
   ArrowRight,
   Hash,
+  HelpCircle,
+  Send,
+  Plus,
+  Trash2,
 } from 'lucide-react'
 
 interface InboxListProps {
@@ -33,6 +37,10 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
   const [processingId, setProcessingId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
 
+  // 追问相关状态
+  const [followUpMode, setFollowUpMode] = useState<string | null>(null) // 正在追问的申请ID
+  const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([''])
+
   const showToast = (message: string) => {
     setToast(message)
     setTimeout(() => setToast(null), 2000)
@@ -40,6 +48,11 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
 
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id)
+    // 关闭追问模式
+    if (expandedId === id) {
+      setFollowUpMode(null)
+      setFollowUpQuestions([''])
+    }
   }
 
   const handleAction = async (
@@ -81,12 +94,96 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
     }
   }
 
+  // 开始追问
+  const startFollowUp = (applicationId: string) => {
+    setFollowUpMode(applicationId)
+    setFollowUpQuestions([''])
+  }
+
+  // 取消追问
+  const cancelFollowUp = () => {
+    setFollowUpMode(null)
+    setFollowUpQuestions([''])
+  }
+
+  // 添加追问问题
+  const addFollowUpQuestion = () => {
+    setFollowUpQuestions([...followUpQuestions, ''])
+  }
+
+  // 删除追问问题
+  const removeFollowUpQuestion = (index: number) => {
+    if (followUpQuestions.length > 1) {
+      const newQuestions = [...followUpQuestions]
+      newQuestions.splice(index, 1)
+      setFollowUpQuestions(newQuestions)
+    }
+  }
+
+  // 更新追问问题
+  const updateFollowUpQuestion = (index: number, value: string) => {
+    const newQuestions = [...followUpQuestions]
+    newQuestions[index] = value
+    setFollowUpQuestions(newQuestions)
+  }
+
+  // 发送追问
+  const handleSendFollowUp = async (applicationId: string) => {
+    const validQuestions = followUpQuestions.filter(q => q.trim())
+    if (validQuestions.length === 0) {
+      showToast('请至少填写一个问题')
+      return
+    }
+
+    setProcessingId(applicationId)
+    const result = await sendFollowUp({
+      applicationId,
+      questions: validQuestions,
+    })
+    setProcessingId(null)
+
+    if (result.error) {
+      showToast(result.error)
+    } else {
+      // 更新本地状态
+      setApplications((prev) =>
+        prev.map((app) =>
+          app.id === applicationId
+            ? {
+                ...app,
+                status: 'follow_up',
+                followUps: [
+                  ...app.followUps,
+                  { questions: validQuestions, answers: [], createdAt: new Date().toISOString() }
+                ]
+              }
+            : app
+        )
+      )
+      setFollowUpMode(null)
+      setFollowUpQuestions([''])
+      showToast('追问已发送')
+    }
+  }
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
         return (
           <span className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full">
             <Clock size={12} /> 待处理
+          </span>
+        )
+      case 'follow_up':
+        return (
+          <span className="flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
+            <HelpCircle size={12} /> 追问中
+          </span>
+        )
+      case 'answered':
+        return (
+          <span className="flex items-center gap-1 text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
+            <MessageCircle size={12} /> 已回复
           </span>
         )
       case 'approved':
@@ -104,6 +201,26 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
       default:
         return null
     }
+  }
+
+  // 获取头像背景色
+  const getAvatarColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+      case 'answered':
+        return 'bg-blue-100 text-blue-700'
+      case 'follow_up':
+        return 'bg-purple-100 text-purple-700'
+      case 'approved':
+        return 'bg-green-100 text-green-700'
+      default:
+        return 'bg-gray-100 text-gray-500'
+    }
+  }
+
+  // 判断是否可以操作（通过/拒绝/追问）
+  const canTakeAction = (status: string) => {
+    return ['pending', 'answered'].includes(status)
   }
 
   return (
@@ -152,13 +269,7 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
               >
                 <div className="flex items-center gap-3">
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
-                      app.status === 'pending'
-                        ? 'bg-blue-100 text-blue-700'
-                        : app.status === 'approved'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-500'
-                    }`}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${getAvatarColor(app.status)}`}
                   >
                     {app.applicantName?.[0]?.toUpperCase() || 'U'}
                   </div>
@@ -275,13 +386,14 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
                         )}
                       </div>
                     )}
-                    {/* 问答部分 */}
+
+                    {/* 初始问答部分 */}
                     {app.questions.length > 0 && (
                       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
                         <div className="p-4 border-b border-gray-100 bg-gray-50/50">
                           <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase">
                             <MessageCircle size={12} />
-                            问题回答
+                            初始问答
                           </div>
                         </div>
                         <div className="p-4 space-y-4">
@@ -293,6 +405,98 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
                               </p>
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* 追问记录 */}
+                    {app.followUps && app.followUps.length > 0 && (
+                      <div className="space-y-3">
+                        {app.followUps.map((followUp, fIdx) => (
+                          <div key={fIdx} className="bg-purple-50 rounded-xl border border-purple-100 overflow-hidden">
+                            <div className="p-4 border-b border-purple-100 bg-purple-100/50">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-[10px] font-bold text-purple-600 uppercase">
+                                  <HelpCircle size={12} />
+                                  追问 #{fIdx + 1}
+                                </div>
+                                <span className="text-[10px] text-purple-400">
+                                  {new Date(followUp.createdAt).toLocaleDateString('zh-CN')}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="p-4 space-y-4">
+                              {followUp.questions.map((q, qIdx) => (
+                                <div key={qIdx}>
+                                  <p className="text-[10px] font-bold text-purple-500 uppercase mb-1">{q}</p>
+                                  {followUp.answers[qIdx] ? (
+                                    <p className="text-sm text-gray-800 bg-white p-2.5 rounded-lg leading-relaxed border border-purple-100">
+                                      {followUp.answers[qIdx]}
+                                    </p>
+                                  ) : (
+                                    <p className="text-sm text-purple-400 italic bg-white/50 p-2.5 rounded-lg">
+                                      等待对方回答...
+                                    </p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* 追问输入区 */}
+                    {followUpMode === app.id && (
+                      <div className="bg-blue-50 rounded-xl border border-blue-200 p-4 space-y-3">
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-blue-600 uppercase">
+                          <HelpCircle size={12} />
+                          添加追问
+                        </div>
+                        {followUpQuestions.map((q, idx) => (
+                          <div key={idx} className="flex gap-2">
+                            <input
+                              type="text"
+                              value={q}
+                              onChange={(e) => updateFollowUpQuestion(idx, e.target.value)}
+                              placeholder={`问题 ${idx + 1}`}
+                              className="flex-1 text-sm p-3 rounded-lg border border-blue-200 bg-white focus:ring-2 focus:ring-blue-300 focus:border-blue-300"
+                            />
+                            {followUpQuestions.length > 1 && (
+                              <button
+                                onClick={() => removeFollowUpQuestion(idx)}
+                                className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        <button
+                          onClick={addFollowUpQuestion}
+                          className="w-full py-2 border border-dashed border-blue-300 text-blue-500 text-xs font-bold rounded-lg hover:bg-blue-100 flex items-center justify-center gap-1"
+                        >
+                          <Plus size={14} /> 添加问题
+                        </button>
+                        <div className="flex gap-2 pt-2">
+                          <button
+                            onClick={cancelFollowUp}
+                            className="flex-1 py-2 border border-gray-200 bg-white rounded-lg text-gray-600 text-xs font-bold hover:bg-gray-50"
+                          >
+                            取消
+                          </button>
+                          <button
+                            onClick={() => handleSendFollowUp(app.id)}
+                            disabled={processingId === app.id}
+                            className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 flex items-center justify-center gap-1 disabled:opacity-50"
+                          >
+                            {processingId === app.id ? (
+                              <Loader2 size={14} className="animate-spin" />
+                            ) : (
+                              <Send size={14} />
+                            )}
+                            发送追问
+                          </button>
                         </div>
                       </div>
                     )}
@@ -335,12 +539,12 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
                   </div>
 
                   {/* 操作按钮 */}
-                  {app.status === 'pending' && (
-                    <div className="mt-6 grid grid-cols-2 gap-3">
+                  {canTakeAction(app.status) && followUpMode !== app.id && (
+                    <div className="mt-6 grid grid-cols-3 gap-2">
                       <button
                         onClick={() => handleAction(app.id, 'reject', app.applicantName)}
                         disabled={processingId === app.id}
-                        className="py-3 border border-gray-200 bg-white rounded-xl text-gray-600 text-xs font-bold hover:bg-gray-50 flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="py-3 border border-gray-200 bg-white rounded-xl text-gray-600 text-xs font-bold hover:bg-gray-50 flex items-center justify-center gap-1 disabled:opacity-50"
                       >
                         {processingId === app.id ? (
                           <Loader2 size={14} className="animate-spin" />
@@ -350,9 +554,17 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
                         婉拒
                       </button>
                       <button
+                        onClick={() => startFollowUp(app.id)}
+                        disabled={processingId === app.id}
+                        className="py-3 border border-blue-200 bg-blue-50 rounded-xl text-blue-600 text-xs font-bold hover:bg-blue-100 flex items-center justify-center gap-1 disabled:opacity-50"
+                      >
+                        <HelpCircle size={14} />
+                        追问
+                      </button>
+                      <button
                         onClick={() => handleAction(app.id, 'approve', app.applicantName)}
                         disabled={processingId === app.id || !myWechat}
-                        className="py-3 bg-zinc-900 text-white rounded-xl text-xs font-bold hover:bg-black shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="py-3 bg-zinc-900 text-white rounded-xl text-xs font-bold hover:bg-black shadow-lg flex items-center justify-center gap-1 disabled:opacity-50"
                         title={!myWechat ? '请先在名片中设置微信号' : undefined}
                       >
                         {processingId === app.id ? (
@@ -365,7 +577,14 @@ export function InboxList({ applications: initialApplications, myWechat }: Inbox
                     </div>
                   )}
 
-                  {!myWechat && app.status === 'pending' && (
+                  {/* 追问中状态提示 */}
+                  {app.status === 'follow_up' && (
+                    <div className="mt-4 p-3 bg-blue-50 rounded-xl text-center">
+                      <p className="text-xs text-blue-600 font-medium">等待对方回答追问...</p>
+                    </div>
+                  )}
+
+                  {!myWechat && canTakeAction(app.status) && (
                     <p className="text-xs text-amber-600 mt-2 text-center">
                       请先在 &quot;我的名片&quot; 中设置微信号才能通过申请
                     </p>

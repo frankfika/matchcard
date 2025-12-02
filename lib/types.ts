@@ -45,7 +45,15 @@ export const DEFAULT_PROFILE: ProfileData = {
 }
 
 // 申请状态
-export type ApplicationStatus = 'pending' | 'approved' | 'rejected'
+// pending: 待处理, follow_up: 追问中(等待申请者回答), answered: 已回复追问, approved: 已通过, rejected: 已拒绝
+export type ApplicationStatus = 'pending' | 'follow_up' | 'answered' | 'approved' | 'rejected'
+
+// 追问记录
+export interface FollowUp {
+  questions: string[]
+  answers: string[]
+  createdAt: string
+}
 
 // 申请数据
 export interface ApplicationData {
@@ -55,6 +63,7 @@ export interface ApplicationData {
   applicantWechat: string
   questions: string[]
   answers: string[]
+  followUps: FollowUp[]
   status: ApplicationStatus
   replyMessage?: string
   createdAt: string
