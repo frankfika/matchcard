@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import Link from '@/components/ui/LinkNoPrefetch'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
 import { Sparkles, User, Heart, Send, LogOut, ChevronDown } from 'lucide-react'

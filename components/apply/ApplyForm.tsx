@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { useSession } from 'next-auth/react'
+import Link from '@/components/ui/LinkNoPrefetch'
 import { submitApplication } from '@/app/actions/application'
 import { COLORS, type ThemeColor, type Gender } from '@/lib/types'
 import {
@@ -33,6 +34,8 @@ interface ApplyFormProps {
 }
 
 export function ApplyForm({ profile }: ApplyFormProps) {
+  const { data: session } = useSession()
+  const isLogged = !!session?.user
   const [answers, setAnswers] = useState<string[]>(
     new Array(profile.questions.length).fill('')
   )
@@ -50,7 +53,7 @@ export function ApplyForm({ profile }: ApplyFormProps) {
     setAnswers(newAnswers)
   }
 
-  const isFormValid = answers.every((a) => a.trim().length > 0) && applicantWechat.trim().length > 0
+  const isFormValid = answers.every((a) => a.trim().length > 0) && (isLogged ? true : applicantWechat.trim().length > 0)
 
   const handleSubmit = async () => {
     if (!isFormValid) return
@@ -220,33 +223,39 @@ export function ApplyForm({ profile }: ApplyFormProps) {
               </span>
               你的信息
             </h3>
-            <div className="grid grid-cols-1 gap-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                  怎么称呼你
-                </label>
-                <input
-                  value={applicantName}
-                  onChange={(e) => setApplicantName(e.target.value)}
-                  className="block w-full rounded-lg border-gray-200 bg-gray-50 focus:bg-white shadow-sm sm:text-sm p-3 border transition-all"
-                  placeholder="昵称"
-                />
+            {isLogged ? (
+              <div className="bg-blue-50 border border-blue-100 text-blue-700 rounded-xl p-6 text-sm">
+                已登录，将使用你在“我的名片”中的昵称与微信号提交申请。
               </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
+                    怎么称呼你
+                  </label>
+                  <input
+                    value={applicantName}
+                    onChange={(e) => setApplicantName(e.target.value)}
+                    className="block w-full rounded-lg border-gray-200 bg-gray-50 focus:bg-white shadow-sm sm:text-sm p-3 border transition-all"
+                    placeholder="昵称"
+                  />
+                </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
-                  你的微信号 <span className="text-red-500">*</span>
+                  你的联系方式（微信/邮箱/电话） <span className="text-red-500">*</span>
                 </label>
                 <input
                   value={applicantWechat}
                   onChange={(e) => setApplicantWechat(e.target.value)}
                   className="block w-full rounded-lg border-gray-200 bg-gray-50 focus:bg-white shadow-sm sm:text-sm p-3 border transition-all"
-                  placeholder="仅在对方通过后可见"
+                  placeholder="填写微信号/邮箱/或电话其中之一"
                 />
                 <p className="text-[10px] text-gray-400 mt-2 flex items-center gap-1">
                   <CheckCircle size={10} /> 隐私保护：未通过审批前，对方看不到此信息
                 </p>
               </div>
-            </div>
+              </div>
+            )}
 
             {error && (
               <div className="mt-4 bg-red-50 text-red-600 text-sm p-4 rounded-xl border border-red-100">

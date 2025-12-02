@@ -8,8 +8,10 @@ import { applicationSchema, applicationActionSchema } from '@/lib/validations'
 // 提交申请（申请者调用）
 export async function submitApplication(data: {
   profileId: string
-  applicantName: string
-  applicantWechat: string
+  applicantName?: string
+  applicantWechat?: string
+  applicantEmail?: string
+  applicantPhone?: string
   answers: string[]
   questions: string[]
 }) {
@@ -26,29 +28,55 @@ export async function submitApplication(data: {
       return { error: '名片不存在' }
     }
 
-    // 检查是否已申请过（同一微信号对同一名片）
+    // 登录用户优先使用自己的名片联系方式；未登录允许填写任意联系方式
+    const session = await auth()
+    let applicantUserId: string | null = null
+    let applicantName = validated.applicantName || ''
+    let applicantWechat = validated.applicantWechat || ''
+    let applicantEmail = validated.applicantEmail || ''
+    const applicantPhone = validated.applicantPhone || ''
+
+    if (session?.user?.id) {
+      applicantUserId = session.user.id
+      const me = await prisma.profile.findUnique({
+        where: { userId: session.user.id },
+        select: { nickname: true, contactWechat: true, contactEmail: true },
+      })
+      applicantName = applicantName || me?.nickname || '匿名'
+      applicantWechat = me?.contactWechat || applicantWechat
+      applicantEmail = me?.contactEmail || applicantEmail
+    }
+
+    // 至少提供一种联系方式
+    if (![applicantWechat, applicantEmail, applicantPhone].some((v) => (v || '').trim().length > 0)) {
+      return { error: '请至少填写一种联系方式（微信/邮箱/电话）' }
+    }
+
+    // 检查是否已申请过（同一申请者对同一名片）
     const existing = await prisma.application.findFirst({
       where: {
         profileId: validated.profileId,
-        applicantWechat: validated.applicantWechat,
+        OR: [
+          { applicantUserId: applicantUserId || undefined },
+          applicantWechat ? { applicantWechat } : {},
+          applicantEmail ? { applicantEmail } : {},
+        ],
       },
     })
-
     if (existing) {
       return { error: '你已经申请过了，请等待对方回复' }
     }
-
-    // 获取当前登录用户（如果有）
-    const session = await auth()
 
     // 创建申请
     const application = await prisma.application.create({
       data: {
         profileId: validated.profileId,
         targetUserId: profile.userId,
-        applicantUserId: session?.user?.id || null,
-        applicantName: validated.applicantName,
-        applicantWechat: validated.applicantWechat,
+        applicantUserId,
+        applicantName,
+        applicantWechat,
+        applicantEmail,
+        applicantPhone,
         questions: validated.questions,
         answers: validated.answers,
         status: 'pending',
@@ -90,7 +118,7 @@ export async function getReceivedApplications() {
       id: app.id,
       profileId: app.profileId,
       applicantName: app.applicantName,
-      applicantWechat: app.applicantWechat,
+      applicantWechat: app.applicantWechat ?? '',
       questions: app.questions,
       answers: app.answers,
       status: app.status as 'pending' | 'approved' | 'rejected',
@@ -117,6 +145,7 @@ export async function getSentApplications() {
           nickname: true,
           title: true,
           themeColor: true,
+          contactWechat: true,
         },
       },
     },
@@ -128,14 +157,17 @@ export async function getSentApplications() {
       id: app.id,
       profileId: app.profileId,
       applicantName: app.applicantName,
-      applicantWechat: app.applicantWechat,
+      applicantWechat: app.applicantWechat ?? '',
       questions: app.questions,
       answers: app.answers,
       status: app.status as 'pending' | 'approved' | 'rejected',
       replyMessage: app.replyMessage ?? undefined,
       createdAt: app.createdAt.toISOString(),
       updatedAt: app.updatedAt.toISOString(),
-      profile: app.profile,
+      profile: {
+        ...app.profile,
+        contactWechat: app.profile?.contactWechat ?? undefined,
+      },
     })),
   }
 }

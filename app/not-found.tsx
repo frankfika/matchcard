@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import Link from '@/components/ui/LinkNoPrefetch'
 import { Home, ArrowLeft } from 'lucide-react'
 
 export default function NotFound() {

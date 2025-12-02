@@ -34,6 +34,7 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
   const [isEditing, setIsEditing] = useState<boolean>(false)
   const [isSaving, setIsSaving] = useState(false)
   const [mobileTab, setMobileTab] = useState<'edit' | 'preview'>('edit')
+  const [tagInput, setTagInput] = useState('')
 
   const cardRef = useRef<HTMLDivElement>(null)
 
@@ -97,6 +98,20 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
   const handleAiQuestions = async () => {
     setToastMessage('AI 功能开发中')
     setTimeout(() => setToastMessage(null), 2000)
+  }
+
+  const addTagFromInput = () => {
+    const raw = tagInput.trim()
+    if (!raw) return
+    const parts = raw.split(',').map((s) => s.trim()).filter(Boolean)
+    const next = Array.from(new Set([...(profile.tags || []), ...parts]))
+    handleProfileChange('tags', next)
+    setTagInput('')
+  }
+  const removeTagAt = (index: number) => {
+    const arr = [...(profile.tags || [])]
+    arr.splice(index, 1)
+    handleProfileChange('tags', arr)
   }
 
   const downloadImage = async () => {
@@ -247,33 +262,84 @@ export function ProfileEditor({ initialProfile }: ProfileEditorProps) {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="space-y-5">
               <div>
-                <label className="block text-xs font-bold text-zinc-800 mb-2 ml-1">
-                  个人标语
-                </label>
-                <input
-                  disabled={!isEditing}
-                  value={profile.title}
-                  onChange={(e) => handleProfileChange('title', e.target.value)}
-                  className="w-full bg-zinc-50 border-none rounded-2xl text-sm font-medium p-4 text-zinc-900 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all disabled:cursor-not-allowed"
-                />
+                <label className="block text-xs font-bold text-zinc-800 mb-2 ml-1">个人标语</label>
+                <div className="space-y-2">
+                  <textarea
+                    rows={2}
+                    disabled={!isEditing}
+                    value={profile.title}
+                    maxLength={60}
+                    onChange={(e) => handleProfileChange('title', e.target.value)}
+                    placeholder="示例：产品经理，喜欢跑步和摄影；寻找认知同频的伙伴"
+                    className="w-full bg-zinc-50 border-none rounded-2xl text-sm font-medium p-4 text-zinc-900 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all disabled:cursor-not-allowed resize-none"
+                  />
+                  <div className="flex justify-between text-[10px]">
+                    <span className="text-gray-400">格式：一句话，6–24 字，具体可感知</span>
+                    <span className="text-gray-400">{(profile.title || '').length}/60</span>
+                  </div>
+                </div>
               </div>
               <div>
-                <label className="block text-xs font-bold text-zinc-800 mb-2 ml-1">
-                  标签（逗号分隔）
-                </label>
-                <input
-                  disabled={!isEditing}
-                  value={profile.tags.join(', ')}
-                  onChange={(e) =>
-                    handleProfileChange(
-                      'tags',
-                      e.target.value.split(',').map((s) => s.trim())
-                    )
-                  }
-                  className="w-full bg-zinc-50 border-none rounded-2xl text-sm font-medium p-4 text-zinc-900 focus:ring-2 focus:ring-zinc-200 focus:bg-white transition-all disabled:cursor-not-allowed"
-                />
+                <label className="block text-xs font-bold text-zinc-800 mb-2 ml-1">标签</label>
+                <div className="bg-zinc-50 rounded-2xl p-3 border border-zinc-200 space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    {(profile.tags || []).map((t, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-white border border-zinc-200 shadow-sm"
+                      >
+                        {t}
+                        {isEditing && (
+                          <button
+                            onClick={() => removeTagAt(i)}
+                            className="text-zinc-400 hover:text-red-500"
+                            title="移除"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                  {isEditing && (
+                    <div className="space-y-2">
+                      <input
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ',') {
+                            e.preventDefault()
+                            addTagFromInput()
+                          }
+                        }}
+                        placeholder="输入后回车添加，如：90后、创业、Web3/AI"
+                        className="w-full bg-white border-none rounded-xl text-xs p-3 text-zinc-800 focus:ring-2 focus:ring-zinc-200"
+                      />
+                      <div className="flex justify-between text-[10px]">
+                        <span className="text-gray-400">格式：短语或关键词，按回车或逗号添加</span>
+                        <span className="text-gray-400">{(profile.tags || []).length}/6</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {['90后','创业','Web3','AI','阅读','徒步','摄影','产品经理'].map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => {
+                              const curr = profile.tags || []
+                              if (curr.length >= 6) return
+                              const next = Array.from(new Set([...curr, s]))
+                              handleProfileChange('tags', next)
+                            }}
+                            className="px-3 py-1 rounded-full text-[10px] font-bold bg-white border border-zinc-200 text-zinc-600 hover:bg-zinc-100"
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

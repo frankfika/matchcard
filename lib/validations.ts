@@ -28,8 +28,10 @@ export const profileSchema = z.object({
 
 export const applicationSchema = z.object({
   profileId: z.string().min(1, '缺少名片ID'),
-  applicantName: z.string().min(1, '请输入您的昵称').max(50, '昵称最多50个字符'),
-  applicantWechat: z.string().min(1, '请输入您的微信号').max(50, '微信号最多50个字符'),
+  applicantName: z.string().min(1, '请输入您的昵称').max(50, '昵称最多50个字符').optional().or(z.literal('')),
+  applicantWechat: z.string().max(50, '微信号最多50个字符').optional().or(z.literal('')),
+  applicantEmail: z.string().email('请输入有效的邮箱').optional().or(z.literal('')),
+  applicantPhone: z.string().max(20, '电话最多20个字符').optional().or(z.literal('')),
   answers: z.array(z.string().min(1, '请回答问题')).min(1, '请回答问题'),
   questions: z.array(z.string()),
 })

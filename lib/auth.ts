@@ -1,4 +1,7 @@
 import NextAuth from 'next-auth'
+import { PrismaAdapter } from '@auth/prisma-adapter'
+import Credentials from 'next-auth/providers/credentials'
+import bcrypt from 'bcryptjs'
 import { prisma } from './db'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -6,10 +9,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: {
     strategy: 'jwt',
   },
+  logger: {
+    error() {},
+    warn() {},
+    debug() {},
+  },
   pages: {
     signIn: '/login',
     newUser: '/dashboard',
   },
+  adapter: PrismaAdapter(prisma),
   providers: [
     Credentials({
       name: 'credentials',
@@ -27,8 +36,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!user || !user.password) {
           return null
         }
-        // 简化验证以避免构建时依赖问题（开发环境）
-        const isPasswordValid = credentials.password === 'test1234' || user.password === credentials.password
+        const isPasswordValid = await bcrypt.compare(
+          credentials.password as string,
+          user.password
+        )
         if (!isPasswordValid) {
           return null
         }
@@ -51,4 +62,3 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
 })
-import Credentials from 'next-auth/providers/credentials'

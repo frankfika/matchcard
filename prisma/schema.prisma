@@ -115,7 +115,9 @@ model Application {
 
   // 申请者信息
   applicantName   String
-  applicantWechat String
+  applicantWechat String?
+  applicantEmail  String?
+  applicantPhone  String?
 
   // 问题和回答
   questions String[]

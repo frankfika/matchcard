@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import Link from '@/components/ui/LinkNoPrefetch'
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { Sparkles, Loader2, Mail, Lock } from 'lucide-react'

@@ -76,6 +76,7 @@ export interface ApplicationData {
     nickname: string
     title: string
     themeColor: string
+    contactWechat?: string
   }
 }
 

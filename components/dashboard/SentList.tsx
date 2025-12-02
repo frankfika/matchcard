@@ -1,7 +1,8 @@
 'use client'
 
 import type { ApplicationData } from '@/lib/types'
-import { Clock, Check, Send, CheckCircle, XCircle, HourglassIcon } from 'lucide-react'
+import { Clock, Check, Send, CheckCircle, XCircle, HourglassIcon, Copy } from 'lucide-react'
+import { copyToClipboard } from '@/lib/utils'
 
 interface SentListProps {
   applications: ApplicationData[]
@@ -75,11 +76,35 @@ export function SentList({ applications }: SentListProps) {
                 <p className="line-clamp-2 italic">{app.answers.join(' | ')}</p>
               </div>
 
-              {/* 如果通过了，显示对方微信 */}
-              {app.status === 'approved' && app.replyMessage && (
-                <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-100">
-                  <p className="text-xs font-bold text-green-700 mb-1">对方回复:</p>
-                  <p className="text-sm text-green-800">{app.replyMessage}</p>
+              {/* 如果通过了，显示对方回复与微信号 */}
+              {app.status === 'approved' && (
+                <div className="mt-3 space-y-3">
+                  {app.replyMessage && (
+                    <div className="p-3 bg-green-50 rounded-lg border border-green-100">
+                      <p className="text-xs font-bold text-green-700 mb-1">对方回复:</p>
+                      <p className="text-sm text-green-800">{app.replyMessage}</p>
+                    </div>
+                  )}
+                  {app.profile?.contactWechat && (
+                    <div className="p-3 rounded-lg border bg白 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-gray-500 mb-1">对方微信号</p>
+                        <p className="text-sm font-mono text-zinc-800">{app.profile.contactWechat}</p>
+                      </div>
+                      <button
+                        onClick={() => copyToClipboard(app.profile!.contactWechat!)}
+                        className="text-zinc-600 hover:text-zinc-900"
+                        title="复制微信号"
+                      >
+                        <Copy size={16} />
+                      </button>
+                    </div>
+                  )}
+                  {!app.profile?.contactWechat && (
+                    <div className="p-3 rounded-lg border bg-yellow-50 text-yellow-700 text-xs">
+                      对方暂未设置微信号，请稍后再试或等待对方主动联系。
+                    </div>
+                  )}
                 </div>
               )}
             </div>
