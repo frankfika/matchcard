@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { Prisma } from '@prisma/client'
 import { applicationSchema, applicationActionSchema } from '@/lib/validations'
 import type { FollowUp, ApplicationStatus } from '@/lib/types'
 
@@ -359,7 +360,7 @@ export async function sendFollowUp(data: {
     await prisma.application.update({
       where: { id: applicationId },
       data: {
-        followUps: [...existingFollowUps, newFollowUp],
+        followUps: [...existingFollowUps, newFollowUp] as unknown as Prisma.JsonArray,
         status: 'follow_up',
       },
     })
@@ -435,7 +436,7 @@ export async function answerFollowUp(data: {
     await prisma.application.update({
       where: { id: applicationId },
       data: {
-        followUps: updatedFollowUps,
+        followUps: updatedFollowUps as unknown as Prisma.JsonArray,
         status: 'answered',
       },
     })
