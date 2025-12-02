@@ -49,6 +49,10 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false }: ApplyF
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [error, setError] = useState('')
 
+  // 联系方式状态 - 如果用户没有，允许手动填写
+  const [inputWechat, setInputWechat] = useState('')
+  const [inputEmail, setInputEmail] = useState('')
+
   const themeClass = COLORS[profile.themeColor as ThemeColor] || COLORS.zinc
 
   const handleAnswerChange = (index: number, value: string) => {
@@ -57,8 +61,10 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false }: ApplyF
     setAnswers(newAnswers)
   }
 
-  // 检查是否有联系方式
-  const hasContact = currentUser ? !!(currentUser.wechat || currentUser.email) : false
+  // 检查是否有联系方式（已保存的或者新填写的）
+  const hasExistingContact = currentUser ? !!(currentUser.wechat || currentUser.email) : false
+  const hasNewContact = !!(inputWechat.trim() || inputEmail.trim())
+  const hasContact = hasExistingContact || hasNewContact
   const isFormValid = answers.every((a) => a.trim().length > 0) && hasContact
 
   const handleSubmit = async () => {
@@ -67,13 +73,19 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false }: ApplyF
     setIsSubmitting(true)
     setError('')
 
+    // 优先使用已保存的联系方式，否则使用新填写的
+    const wechatToSubmit = currentUser.wechat || inputWechat.trim()
+    const emailToSubmit = currentUser.email || inputEmail.trim()
+
     const result = await submitApplication({
       profileId: profile.id,
       applicantName: currentUser.nickname,
-      applicantWechat: currentUser.wechat,
-      applicantEmail: currentUser.email,
+      applicantWechat: wechatToSubmit,
+      applicantEmail: emailToSubmit,
       answers,
       questions: profile.questions,
+      // 如果是新填写的联系方式，标记需要同步到名片
+      syncToProfile: !hasExistingContact && hasNewContact,
     })
 
     setIsSubmitting(false)
@@ -273,31 +285,49 @@ export function ApplyForm({ profile, currentUser, isOwnProfile = false }: ApplyF
                     <span className="text-sm font-medium text-gray-900">{currentUser.email}</span>
                   </div>
                 )}
+                {/* 如果没有联系方式，显示输入框 */}
                 {!currentUser.wechat && !currentUser.email && (
-                  <div className="bg-amber-50 text-amber-700 text-sm p-3 rounded-lg flex items-center gap-2">
-                    <AlertTriangle size={16} />
-                    你的名片还没有填写联系方式，请先去补充微信或邮箱
+                  <div className="space-y-4">
+                    <div className="bg-blue-50 text-blue-700 text-sm p-3 rounded-lg flex items-start gap-2">
+                      <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                      <span>你还没有填写联系方式，请在下方填写（填写后会自动同步到你的名片）</span>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-2">微信号</label>
+                      <input
+                        type="text"
+                        value={inputWechat}
+                        onChange={(e) => setInputWechat(e.target.value)}
+                        placeholder="你的微信号"
+                        className="w-full rounded-xl border-gray-200 shadow-sm focus:border-zinc-500 focus:ring-zinc-500 text-sm p-3 border bg-gray-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-2">邮箱</label>
+                      <input
+                        type="email"
+                        value={inputEmail}
+                        onChange={(e) => setInputEmail(e.target.value)}
+                        placeholder="你的邮箱"
+                        className="w-full rounded-xl border-gray-200 shadow-sm focus:border-zinc-500 focus:ring-zinc-500 text-sm p-3 border bg-gray-50"
+                      />
+                    </div>
+                    <p className="text-[10px] text-gray-400">
+                      至少填写一项联系方式
+                    </p>
                   </div>
                 )}
-                <p className="text-[10px] text-gray-400 flex items-center gap-1 pt-2 border-t border-gray-100">
-                  <CheckCircle size={10} /> 以上信息来自你的名片，仅在对方通过后可见
-                </p>
+                {hasExistingContact && (
+                  <p className="text-[10px] text-gray-400 flex items-center gap-1 pt-2 border-t border-gray-100">
+                    <CheckCircle size={10} /> 以上信息来自你的名片，仅在对方通过后可见
+                  </p>
+                )}
               </div>
             ) : (
               <div className="bg-amber-50 text-amber-700 text-sm p-4 rounded-xl flex items-center gap-2">
                 <AlertTriangle size={16} />
                 请先完善你的名片信息
               </div>
-            )}
-
-            {!hasContact && currentUser && (
-              <Link
-                href="/dashboard"
-                className="mt-4 inline-flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900 font-medium"
-              >
-                <ArrowRight size={14} />
-                去完善我的名片
-              </Link>
             )}
 
             {error && (

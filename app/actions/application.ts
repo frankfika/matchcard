@@ -14,6 +14,7 @@ export async function submitApplication(data: {
   applicantPhone?: string
   answers: string[]
   questions: string[]
+  syncToProfile?: boolean // 是否将联系方式同步到用户名片
 }) {
   try {
     const validated = applicationSchema.parse(data)
@@ -48,8 +49,20 @@ export async function submitApplication(data: {
         select: { nickname: true, contactWechat: true, contactEmail: true },
       })
       applicantName = applicantName || me?.nickname || '匿名'
+      // 如果用户已有联系方式，使用已有的；否则使用传入的
       applicantWechat = me?.contactWechat || applicantWechat
       applicantEmail = me?.contactEmail || applicantEmail
+
+      // 如果需要同步联系方式到用户名片
+      if (data.syncToProfile && (applicantWechat || applicantEmail)) {
+        await prisma.profile.update({
+          where: { userId: session.user.id },
+          data: {
+            ...(applicantWechat && !me?.contactWechat ? { contactWechat: applicantWechat } : {}),
+            ...(applicantEmail && !me?.contactEmail ? { contactEmail: applicantEmail } : {}),
+          },
+        })
+      }
     }
 
     // 至少提供一种联系方式
