@@ -28,8 +28,7 @@ export function ProfileCard({ data, shareUrl, forwardRef }: ProfileCardProps) {
   return (
     <div
       ref={forwardRef}
-      className={`w-full max-w-[520px] shadow-2xl mx-auto flex flex-col relative ${themeClass} min-h-[600px] h-auto`}
-      style={{ borderRadius: '24px' }}
+      className={`w-full max-w-[520px] shadow-2xl mx-auto flex flex-col relative ${themeClass} min-h-[600px] h-auto overflow-hidden rounded-[24px]`}
     >
       {/* Texture Overlay */}
       <div className="absolute inset-0 bg-noise opacity-10 pointer-events-none z-10 rounded-[24px]" />
@@ -112,7 +111,7 @@ export function ProfileCard({ data, shareUrl, forwardRef }: ProfileCardProps) {
         </div>
 
         {/* Bottom Ticket Stub */}
-        <div className="mt-auto bg-white text-zinc-900 p-6 pt-8 rounded-t-3xl relative mx-2 mb-2 shadow-2xl">
+        <div className="mt-auto bg-white text-zinc-900 p-6 pt-8 rounded-b-[24px] relative shadow-2xl">
           {/* Cutout circles */}
           <div className="absolute top-0 left-[-10px] w-6 h-6 bg-transparent rounded-full shadow-[inset_-10px_0_0_0_#000] opacity-20 transform -translate-y-1/2" />
 
