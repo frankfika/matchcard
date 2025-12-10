@@ -157,6 +157,9 @@ export function ProfileCard({ data, shareUrl, forwardRef }: ProfileCardProps) {
               )}
             </div>
           </div>
+          <div className="text-center mt-4 pt-3 border-t border-zinc-100">
+            <span className="text-[9px] text-zinc-400 font-medium tracking-wide">node404.fun</span>
+          </div>
         </div>
       </div>
     </div>
